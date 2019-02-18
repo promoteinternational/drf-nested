@@ -8,7 +8,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.fields import empty
 from rest_framework.serializers import ListSerializer
 
-from mixins.nestable_mixin import NestableMixin
+from .nestable_mixin import NestableMixin
 
 
 class BaseNestedMixin(serializers.ModelSerializer):
