@@ -16,8 +16,8 @@ setuptools.setup(
     url="https://github.com/promoteinternational/drf-nested",
     packages=setuptools.find_packages(),
     install_requires=[
-        'Django>=1.9.0',
-        "djangorestframework>=3.5.0"
+        'Django>=2.0',
+        "djangorestframework>=3.8.0"
     ],
     classifiers=(
         "Programming Language :: Python :: 3",
