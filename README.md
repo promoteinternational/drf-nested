@@ -1,5 +1,7 @@
 ## DRF Nested Utils
 
+[![pypi package](https://img.shields.io/pypi/v/drf-nested.svg)](https://pypi.org/project/drf-nested/)
+
 This package provides a set of utils to help developers implement nested data handling for Django Rest Framework.
 
 This package adds support for:
