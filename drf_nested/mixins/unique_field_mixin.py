@@ -6,6 +6,10 @@ from rest_framework.validators import UniqueValidator
 
 
 class UniqueFieldMixin(serializers.ModelSerializer):
+    """
+    Extracts unique validators for every field.
+    The validators are being run on `create`/`update` instead of `is_valid`
+    """
     _unique_validators: List[str] = []
 
     def _is_unique_validator(self, validator):

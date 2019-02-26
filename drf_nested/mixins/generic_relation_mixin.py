@@ -8,6 +8,12 @@ class GenericRelationMixin(serializers.ModelSerializer):
     generic_relation_fields = ["content_type", "content_type_id", "object_id"]
 
     def _set_generic_relation_fields(self, value: bool):
+        """
+        Generic relations should an ability to be created on connected model `create`.
+        In case `content_type` or/and `object_id` are required, the validation would fail.
+        To prevent that, those fields `required` values are set to false,
+        only to be validated on `create`/`update`.
+        """
         for field in self.generic_relation_fields:
             if self.fields.get(field) is not None:
                 self.fields[field].required = value

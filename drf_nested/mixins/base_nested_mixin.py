@@ -12,19 +12,30 @@ from .nestable_mixin import NestableMixin
 
 
 class BaseNestedMixin(serializers.ModelSerializer):
+    """
+    Base class for nested serializers.
+    Provides all the needed methods and properties for manipulating nested data.
+    """
     def __init__(self, instance=None, data: Union[empty, dict] = empty, **kwargs):
         super().__init__(instance, data, **kwargs)
 
         if data is not empty:
             data, nested_fields_data = self._get_nested_fields(data)
+
+            # For all nested fields, initialize serializer with model instances
+            # for further unique/unique_together checks
             for field_name, nested_data in nested_fields_data.items():
                 serializer = self.fields.get(field_name)
                 if serializer:
                     serializer_kwargs = (serializer.child._kwargs if "child" in serializer._kwargs
                                          else serializer._kwargs)
+                    serializer_kwargs.update(context=self.context)
 
+                    # Finding either single pk value or list of them,
+                    # in case the nested serializer is a ListSerializer instance
                     pk = self._get_field_pk_value(field_name, nested_data)
 
+                    # Initializing the new instances nested serializers with model instances
                     if issubclass(serializer.__class__, ListSerializer):
                         serializer = serializer.child.__class__
                         model = serializer.Meta.model
@@ -35,11 +46,18 @@ class BaseNestedMixin(serializers.ModelSerializer):
                         model = serializer.Meta.model
                         model_instance = model.objects.filter(**{"pk": pk}).first()
 
+                    # Replacing old serializer with new one, that is populated with model instances
                     del self.fields[field_name]
                     new_serializer = serializer(model_instance, **serializer_kwargs)
                     self.fields[field_name] = new_serializer
 
     def _get_field_pk_value(self, field_name: str, nested_data):
+        """
+        Gets primary key value from given data for given serializer field name
+        :param field_name: serializer field name
+        :param nested_data: dict or list containing the nested data for given serializer field name
+        :return: value or list of values of primary key for the given serializer field name
+        """
         pk_key = self._get_field_pk_name(field_name)
         if isinstance(nested_data, list):
             ids = []
@@ -52,7 +70,12 @@ class BaseNestedMixin(serializers.ModelSerializer):
                 return nested_data.get(pk_key)
         return None
 
-    def _get_field_pk_name(self, field_name: str):
+    def _get_field_pk_name(self, field_name: str) -> str:
+        """
+        Gets primary key field name for given serializer field name
+        :param field_name: serializer field name
+        :return: primary key field name
+        """
         serializer = self._get_serializer_by_field_name(field_name)
         if issubclass(serializer.__class__, ListSerializer):
             model = serializer.child.Meta.model
@@ -61,6 +84,12 @@ class BaseNestedMixin(serializers.ModelSerializer):
         return model._meta.pk.attname
 
     def _get_nested_fields(self, initial_data, remove_fields: bool = False):
+        """
+        Returns all nested fields from the initial data
+        :param initial_data: data given to serializer
+        :param remove_fields: indicator whether nested field should be removed from the original data source
+        :return: original data (possibly cleaned of the nested fields) and nested data
+        """
         attr = "pop" if remove_fields else "get"
         initial_data_copy = deepcopy(initial_data)
         nested_fields = {
@@ -242,6 +271,12 @@ class BaseNestedMixin(serializers.ModelSerializer):
     # Helper functions
 
     def _should_be_deleted_on_update(self, field_name):
+        """
+        Indicates if the field instances not provided in nested data should be deleted on update.
+        Can be overloaded if needed.
+        :param field_name: field name
+        :return: if the field should be cleaned on update
+        """
         return not self.partial
 
     def _get_field_by_name(self, field_name, list_of_fields):
@@ -258,6 +293,14 @@ class BaseNestedMixin(serializers.ModelSerializer):
         return any([field in self.nested_field_names for field in fields])
 
     def _delete_difference_on_update(self, instance, objects, model_class, field_name):
+        """
+        Deletes related objects on update
+        :param instance: model instance which connections to be searched for the differences
+        :param objects: instances that should be preserved
+        :param model_class: related model class that is used to searched for redundant instances
+        :param field_name: field name that is searched for the differences
+        :return: None
+        """
         if isinstance(objects, list):
             objects_to_delete = list(set([item.pk for item in instance.__getattribute__(field_name).all()]) -
                                      set([item.get(self._get_field_pk_name(field_name)) for item in objects]))
@@ -279,6 +322,11 @@ class BaseNestedMixin(serializers.ModelSerializer):
                             pass
 
     def get_related_name(self, field_name: str) -> Optional[str]:
+        """
+        Gets related model field name using serializer field name
+        :param field_name: field name
+        :return: related model field name
+        """
         name_to_look_for = self.get_model_field_name(field_name)
 
         list_of_fields, related_field = None, None
@@ -296,7 +344,12 @@ class BaseNestedMixin(serializers.ModelSerializer):
             raise ValidationError({field_name: ["No related name."]})
         return related_field
 
-    def get_model_field_name(self, field_name):
+    def get_model_field_name(self, field_name) -> str:
+        """
+        Gets corresponding model field name using serializer field name
+        :param field_name: field name
+        :return: model field name
+        """
         serializer = self.fields.get(field_name)
         if serializer is None:
             source = self.get_field_name_by_source(field_name)
@@ -308,7 +361,12 @@ class BaseNestedMixin(serializers.ModelSerializer):
             return serializer.write_source
         return field_name
 
-    def get_field_name_by_source(self, source):
+    def get_field_name_by_source(self, source) -> str:
+        """
+        Gets field name to use further based on the given serializer source
+        :param source: serializer source
+        :return: field name
+        """
         for key, value in self.fields.items():
             if value.source == source:
                 return key
@@ -316,7 +374,12 @@ class BaseNestedMixin(serializers.ModelSerializer):
                 return key
         return source
 
-    def extract_nested_types(self, nested_fields_data):
+    def extract_nested_types(self, nested_fields_data) -> dict:
+        """
+        Extracts all the nested data by type, to ease the overall create/update flow
+        :param nested_fields_data: nested data, taken from the original data source
+        :return: nested fields, sorted by relationship type
+        """
         types = {"direct_relations": [],
                  "reverse_relations": [],
                  "generic_relations": [],

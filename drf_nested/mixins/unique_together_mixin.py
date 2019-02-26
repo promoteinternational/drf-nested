@@ -8,6 +8,10 @@ from rest_framework.validators import UniqueTogetherValidator
 
 
 class UniqueTogetherMixin(serializers.ModelSerializer):
+    """
+    Extracts unique together validators for every field.
+    The validators are being run on `create`/`update` instead of `is_valid`
+    """
     _unique_together_validators: List[Tuple[str]] = []
 
     def __init__(self, instance=None, data=empty, **kwargs):
@@ -32,6 +36,8 @@ class UniqueTogetherMixin(serializers.ModelSerializer):
                 raise ValidationError({"non_field_errors": exc.detail})
 
     def _validate_unique_together(self, validated_data):
+        # It is possible that instance set for the nested serializer is a QuerySet
+        # In that case we run validation for each item on the list individually
         if isinstance(self.instance, QuerySet):
             queryset = self.instance
             for item in self.instance.all():
