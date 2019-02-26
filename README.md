@@ -171,6 +171,6 @@ class CompanySerializer(NestedSerializer, serializers.HyperlinkedModelSerializer
 > Note: If you are using a Many-to-Many field with `source` property or you have a `through` model on your serializer, 
 you should add a `NestableMixin` to the target serializer and add a `write_source` field when you initialize that serializer.
 
-> In case of the `source` property you should add an actual model field that would allow you to properly connect your model with related. 
+> In case of the `source` property you should add an actual model field that would allow you to properly connect your model with related ones. 
 
 > In case of the `through` model you should have it set to the `related_name` of the connected `through` model
