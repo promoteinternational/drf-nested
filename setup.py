@@ -15,7 +15,7 @@ except FileNotFoundError:
 setuptools.setup(
     name="drf_nested",
     version="0.1.0",
-    author="Andreas Kuhne, Artur Veres",
+    author="Andréas Kühne, Artur Veres",
     author_email="andreas.kuhne@promoteint.com, artur8118@gmail.com",
     maintainer="Artur Veres",
     maintainer_email="artur8118@gmail.com",
