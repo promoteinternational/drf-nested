@@ -6,6 +6,10 @@ from drf_nested.mixins import (NestableMixin, CreateNestedMixin, UpdateNestedMix
 from .models import User, Group, Manager, Employee, EmployeeRole, Role, Company, Comment
 
 
+class NestedSerializer(CreateNestedMixin, UpdateNestedMixin):
+    pass
+
+
 class UserSerializer(NestableMixin, serializers.HyperlinkedModelSerializer):
     class Meta:
         model = User
@@ -20,7 +24,7 @@ class CommentSerializer(GenericRelationMixin, serializers.HyperlinkedModelSerial
         fields = ('text', 'object_id', 'content_type', 'content_type_id',)
 
 
-class GroupSerializer(CreateNestedMixin, UpdateNestedMixin, serializers.HyperlinkedModelSerializer):
+class GroupSerializer(NestedSerializer, serializers.HyperlinkedModelSerializer):
     members = UserSerializer(required=False, many=True, source="active_users",
                              write_source="members")
 
@@ -35,7 +39,7 @@ class SimpleGroupSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('name',)
 
 
-class UserGroupSerializer(CreateNestedMixin, UpdateNestedMixin, serializers.HyperlinkedModelSerializer):
+class UserGroupSerializer(NestedSerializer, serializers.HyperlinkedModelSerializer):
     groups = SimpleGroupSerializer(many=True, required=False)
 
     class Meta:
@@ -52,7 +56,7 @@ class ManagerSerializer(UniqueTogetherMixin, CreateNestedMixin, UpdateNestedMixi
         fields = ('user', 'level')
 
 
-class EmployeeSerializer(CreateNestedMixin, UpdateNestedMixin, serializers.HyperlinkedModelSerializer):
+class EmployeeSerializer(NestedSerializer, serializers.HyperlinkedModelSerializer):
     user = UserSerializer()
 
     class Meta:
@@ -69,7 +73,7 @@ class EmployeeRoleSerializer(NestableMixin, serializers.HyperlinkedModelSerializ
         fields = ('employee_id', 'role_id', 'name')
 
 
-class RoleSerializer(CreateNestedMixin, UpdateNestedMixin, serializers.HyperlinkedModelSerializer):
+class RoleSerializer(NestedSerializer, serializers.HyperlinkedModelSerializer):
     employees = EmployeeRoleSerializer(many=True, required=False, write_source="employee_roles",
                                        source="employee_roles")
 
@@ -78,7 +82,7 @@ class RoleSerializer(CreateNestedMixin, UpdateNestedMixin, serializers.Hyperlink
         fields = ('employees', 'permission', 'name')
 
 
-class CompanySerializer(CreateNestedMixin, UpdateNestedMixin, serializers.HyperlinkedModelSerializer):
+class CompanySerializer(NestedSerializer, serializers.HyperlinkedModelSerializer):
     managers = ManagerSerializer(many=True, required=False)
     comments = CommentSerializer(many=True, required=False)
 
