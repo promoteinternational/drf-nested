@@ -1,16 +1,18 @@
 from rest_framework import serializers
+from drf_nested.mixins.nestable_mixin import NestableMixin
 
 from .models import User, Group, Manager, Employee, EmployeeRole, Role, Company
 
 
-class UserSerializer(serializers.HyperlinkedModelSerializer):
+class UserSerializer(NestableMixin, serializers.HyperlinkedModelSerializer):
     class Meta:
         model = User
         fields = ('username',)
 
 
 class GroupSerializer(serializers.HyperlinkedModelSerializer):
-    members = UserSerializer(required=False, many=True, source="active_users")
+    members = UserSerializer(required=False, many=True, source="active_users",
+                             write_source="members")
 
     class Meta:
         model = Group
