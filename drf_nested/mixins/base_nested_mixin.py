@@ -230,8 +230,7 @@ class BaseNestedMixin(serializers.ModelSerializer):
 
             for item in data:
                 content_type = ContentType.objects.get_for_model(model_instance.__class__)
-                item.update({"content_type": content_type,
-                             "content_type_id": content_type.id,
+                item.update({"content_type_id": content_type.id,
                              "object_id": model_instance.id})
                 pk = item.get(self._get_field_pk_name(field_name))
                 if pk is not None:
@@ -276,7 +275,7 @@ class BaseNestedMixin(serializers.ModelSerializer):
                     if object_id:
                         try:
                             instance.__getattribute__(field_name).remove(model_class.objects.get(pk=object_id))
-                        except model_class.DoesNotExist:
+                        except (model_class.DoesNotExist, AttributeError):
                             pass
 
     def get_related_name(self, field_name: str) -> Optional[str]:
