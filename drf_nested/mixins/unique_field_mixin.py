@@ -2,6 +2,7 @@ from typing import List
 
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+from rest_framework.fields import empty
 from rest_framework.validators import UniqueValidator
 
 
@@ -11,6 +12,10 @@ class UniqueFieldMixin(serializers.ModelSerializer):
     The validators are being run on `create`/`update` instead of `is_valid`
     """
     _unique_validators: List[str] = []
+
+    def __init__(self, instance=None, data=empty, **kwargs):
+        self._unique_validators = []
+        super().__init__(instance, data, **kwargs)
 
     def _is_unique_validator(self, validator):
         return isinstance(validator, UniqueValidator)
