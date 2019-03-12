@@ -15,6 +15,7 @@ class UniqueTogetherMixin(serializers.ModelSerializer):
     _unique_together_validators: List[Tuple[str]] = []
 
     def __init__(self, instance=None, data=empty, **kwargs):
+        self._unique_together_validators = []
         for validator in self.validators:
             if self._is_unique_together_validator(validator):
                 self._unique_together_validators.append(validator.fields)
