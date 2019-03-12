@@ -168,7 +168,10 @@ class CompanySerializer(NestedSerializer, serializers.HyperlinkedModelSerializer
     class Meta:
         model = Company
         fields = ('managers', 'comments', 'name')
+        
 ```
+
+You can see examples of usage in `examples/` directory.
 
 > Note: If you are using a Many-to-Many field with `source` property or you have a `through` model on your serializer, 
 you should add a `NestableMixin` to the target serializer and add a `write_source` field when you initialize that serializer.
