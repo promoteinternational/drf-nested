@@ -12,13 +12,12 @@ class UniqueTogetherMixin(serializers.ModelSerializer):
     Extracts unique together validators for every field.
     The validators are being run on `create`/`update` instead of `is_valid`
     """
-    _unique_together_validators: List[Tuple[str]] = []
 
     def __init__(self, instance=None, data=empty, **kwargs):
-        self._unique_together_validators = []
+        self.Meta.unique_together_validators = []
         for validator in self.validators:
             if self._is_unique_together_validator(validator):
-                self._unique_together_validators.append(validator.fields)
+                self.Meta.unique_together_validators.append(validator.fields)
         self.validators = [validator for validator in self.validators
                            if not self._is_unique_together_validator(validator)]
         super().__init__(instance, data, **kwargs)
@@ -27,7 +26,7 @@ class UniqueTogetherMixin(serializers.ModelSerializer):
         return isinstance(validator, UniqueTogetherValidator)
 
     def _validate_unique_together_instance(self, validated_data):
-        for fields in self._unique_together_validators:
+        for fields in self.Meta.unique_together_validators:
             unique_together_validator = UniqueTogetherValidator(self.Meta.model.objects.all(),
                                                                 fields)
             unique_together_validator.set_context(self)
@@ -55,3 +54,7 @@ class UniqueTogetherMixin(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         self._validate_unique_together(validated_data)
         return super().update(instance, validated_data)
+
+    class Meta:
+        model = None
+        unique_together_validators: List[Tuple[str]] = None
