@@ -16,6 +16,15 @@ class UniqueFieldMixin(serializers.ModelSerializer):
         self.Meta.unique_validators = []
         super().__init__(instance, data, **kwargs)
 
+    def add_validator(self, field_name):
+        if self.Meta.unique_validators is None:
+            self.Meta.unique_validators = []
+        self.Meta.unique_validators.append(field_name)
+
+    @property
+    def unique_validators(self):
+        return self.Meta.unique_validators if self.Meta.unique_validators is not None else []
+
     def _is_unique_validator(self, validator):
         return isinstance(validator, UniqueValidator)
 
@@ -29,7 +38,7 @@ class UniqueFieldMixin(serializers.ModelSerializer):
         fields = super().get_fields()
         for field_name, field_serializer in fields.items():
             if self._has_unique_validator(field_serializer):
-                self.Meta.unique_validators.append(field_name)
+                self.add_validator(field_name)
             field_serializer.validators = [
                 validator for validator in field_serializer.validators
                 if not self._is_unique_validator(validator)
@@ -37,7 +46,7 @@ class UniqueFieldMixin(serializers.ModelSerializer):
         return fields
 
     def _validate_unique(self, validated_data):
-        for field in self.Meta.unique_validators:
+        for field in self.unique_validators:
             unique_together_validator = UniqueValidator(self.Meta.model.objects.all())
             unique_together_validator.set_context(self.fields[field])
             try:
@@ -55,4 +64,4 @@ class UniqueFieldMixin(serializers.ModelSerializer):
 
     class Meta:
         model = None
-        unique_validators: List[str] = []
+        unique_validators: List[str] = None
