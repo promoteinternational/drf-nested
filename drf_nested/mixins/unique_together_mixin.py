@@ -58,7 +58,7 @@ class UniqueTogetherMixin(serializers.ModelSerializer):
             queryset = self.instance
             pk = self.get_model_pk()
             self.instance = None
-            if pk in validated_data.get(pk):
+            if pk in validated_data:
                 try:
                     instance = queryset.get(pk=validated_data.get(pk))
                     self.instance = instance
