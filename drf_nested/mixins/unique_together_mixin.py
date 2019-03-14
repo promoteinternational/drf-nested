@@ -14,6 +14,7 @@ class UniqueTogetherMixin(serializers.ModelSerializer):
     """
 
     def __init__(self, instance=None, data=empty, **kwargs):
+        self.Meta.unique_together_validators = []
         for validator in self.validators:
             if self._is_unique_together_validator(validator):
                 self.add_validator(validator.fields)
