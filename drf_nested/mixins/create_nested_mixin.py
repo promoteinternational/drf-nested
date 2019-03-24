@@ -32,20 +32,28 @@ class CreateNestedMixin(BaseNestedMixin):
                 field_name = field.get('name')
                 field_data = field.get('data')
                 if isinstance(field_data, dict):
-                    nested_instance = self._update_or_create_direct_relations(field_name, field.get('data'))
+                    nested_instance = self._update_or_create_direct_relations(field_name, field_data)
                     validated_data[field.get("original_name")] = nested_instance
 
             model_instance = super().create(validated_data)
 
             for field in nested_field_types["reverse_relations"]:
-                if not self._is_field_forbidden(field):
-                    self._update_or_create_reverse_relation(field.get('name'), field.get('data'), model_instance)
+                field_name = field.get('name')
+                field_data = field.get('data')
+                if self.can_create_field(field_name, field_data):
+                    self._update_or_create_reverse_relation(field_name, field_data, model_instance)
+
             for field in nested_field_types["generic_relations"]:
-                if not self._is_field_forbidden(field):
-                    self._update_or_create_generic_relation(field.get('name'), field.get('data'), model_instance)
+                field_name = field.get('name')
+                field_data = field.get('data')
+                if self.can_create_field(field_name, field_data):
+                    self._update_or_create_generic_relation(field_name, field_data, model_instance)
+
             for field in nested_field_types["many_to_many_fields"]:
-                if not self._is_field_forbidden(field):
-                    self._update_or_create_many_to_many_field(field.get('name'), field.get('data'), model_instance)
+                field_name = field.get('name')
+                field_data = field.get('data')
+                if self.can_create_field(field_name, field_data):
+                    self._update_or_create_many_to_many_field(field_name, field_data, model_instance)
 
         else:
             model_instance = super().create(validated_data)
@@ -53,6 +61,13 @@ class CreateNestedMixin(BaseNestedMixin):
         model_instance.refresh_from_db()
 
         return model_instance
+
+    def can_create_field(self, field_name: str, field_data) -> bool:
+        if self._is_field_forbidden(field_name):
+            raise ValidationError({field_name: [f"Field `{field_name}` is forbidden on `create`"]})
+        if isinstance(field_data, dict):
+            return True
+        return False
 
     def _is_field_forbidden(self, field_name):
         return field_name in self.Meta.forbidden_on_create
