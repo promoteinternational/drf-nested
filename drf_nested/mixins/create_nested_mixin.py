@@ -40,19 +40,19 @@ class CreateNestedMixin(BaseNestedMixin):
             for field in nested_field_types["reverse_relations"]:
                 field_name = field.get('name')
                 field_data = field.get('data')
-                if self.can_create_field(field_name, field_data):
+                if self.can_create_field(field_name):
                     self._update_or_create_reverse_relation(field_name, field_data, model_instance)
 
             for field in nested_field_types["generic_relations"]:
                 field_name = field.get('name')
                 field_data = field.get('data')
-                if self.can_create_field(field_name, field_data):
+                if self.can_create_field(field_name):
                     self._update_or_create_generic_relation(field_name, field_data, model_instance)
 
             for field in nested_field_types["many_to_many_fields"]:
                 field_name = field.get('name')
                 field_data = field.get('data')
-                if self.can_create_field(field_name, field_data):
+                if self.can_create_field(field_name):
                     self._update_or_create_many_to_many_field(field_name, field_data, model_instance)
 
         else:
@@ -62,16 +62,16 @@ class CreateNestedMixin(BaseNestedMixin):
 
         return model_instance
 
-    def can_create_field(self, field_name: str, field_data) -> bool:
+    def can_create_field(self, field_name: str) -> bool:
         if self._is_field_forbidden(field_name):
             raise ValidationError({field_name: [f"Field `{field_name}` is forbidden on `create`"]})
-        if isinstance(field_data, dict):
-            return True
-        return False
+        return True
 
     def _is_field_forbidden(self, field_name):
-        return field_name in self.Meta.forbidden_on_create
+        if hasattr(self.Meta, "forbidden_on_create") and isinstance(self.Meta.forbidden_on_create, list):
+            return field_name in self.Meta.forbidden_on_create
+        return False
 
     class Meta:
         model = None
-        forbidden_on_create = []
+        forbidden_on_create = None
