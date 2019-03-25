@@ -61,7 +61,7 @@ class CreateNestedMixin(BaseNestedMixin):
 
     def _is_field_forbidden(self, field_name):
         if hasattr(self.Meta, "forbidden_on_create") and isinstance(self.Meta.forbidden_on_create, list):
-            return field_name in self.Meta.forbidden_on_create
+            return self.get_model_field_name(field_name) in self.Meta.forbidden_on_create
         return False
 
     class Meta:
