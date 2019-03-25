@@ -40,20 +40,17 @@ class CreateNestedMixin(BaseNestedMixin):
             for field in nested_field_types["reverse_relations"]:
                 field_name = field.get('name')
                 field_data = field.get('data')
-                if self.can_create_field(field_name):
-                    self._update_or_create_reverse_relation(field_name, field_data, model_instance)
+                self._update_or_create_reverse_relation(field_name, field_data, model_instance)
 
             for field in nested_field_types["generic_relations"]:
                 field_name = field.get('name')
                 field_data = field.get('data')
-                if self.can_create_field(field_name):
-                    self._update_or_create_generic_relation(field_name, field_data, model_instance)
+                self._update_or_create_generic_relation(field_name, field_data, model_instance)
 
             for field in nested_field_types["many_to_many_fields"]:
                 field_name = field.get('name')
                 field_data = field.get('data')
-                if self.can_create_field(field_name):
-                    self._update_or_create_many_to_many_field(field_name, field_data, model_instance)
+                self._update_or_create_many_to_many_field(field_name, field_data, model_instance)
 
         else:
             model_instance = super().create(validated_data)
@@ -61,11 +58,6 @@ class CreateNestedMixin(BaseNestedMixin):
         model_instance.refresh_from_db()
 
         return model_instance
-
-    def can_create_field(self, field_name: str) -> bool:
-        if self._is_field_forbidden(field_name):
-            raise ValidationError({field_name: [f"Field `{field_name}` is forbidden on `create`"]})
-        return True
 
     def _is_field_forbidden(self, field_name):
         if hasattr(self.Meta, "forbidden_on_create") and isinstance(self.Meta.forbidden_on_create, list):
