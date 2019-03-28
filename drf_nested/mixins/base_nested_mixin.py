@@ -8,6 +8,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.fields import empty
 from rest_framework.serializers import ListSerializer
 
+from drf_nested.mixins import ThroughMixin
 from .nestable_mixin import NestableMixin
 
 
@@ -16,6 +17,7 @@ class BaseNestedMixin(serializers.ModelSerializer):
     Base class for nested serializers.
     Provides all the needed methods and properties for manipulating nested data.
     """
+
     def __init__(self, instance=None, data: Union[empty, dict] = empty, **kwargs):
         super().__init__(instance, data, **kwargs)
 
@@ -229,7 +231,8 @@ class BaseNestedMixin(serializers.ModelSerializer):
                 else:
                     nested_instance = serializer.child.create(dict(item))
                 items_to_add.append(nested_instance)
-            model_instance.__getattribute__(self.get_model_field_name(field_name)).add(*items_to_add)
+            if not issubclass(serializer.child.__class__, ThroughMixin) or serializer.child.connect_to_model:
+                model_instance.__getattribute__(self.get_model_field_name(field_name)).add(*items_to_add)
 
     # Generic relations
     @property
