@@ -368,9 +368,12 @@ class BaseNestedMixin(serializers.ModelSerializer):
         :return: field name
         """
         for key, value in self.fields.items():
-            if value.source == source:
+            actual_value = value
+            if isinstance(value, ListSerializer):
+                actual_value = value.child
+            if actual_value.source == source:
                 return key
-            elif isinstance(value, NestableMixin) and value.write_source == source:
+            elif isinstance(actual_value, NestableMixin) and actual_value.write_source == source:
                 return key
         return source
 
