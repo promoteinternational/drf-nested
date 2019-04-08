@@ -46,7 +46,7 @@ set on the initial `is_valid` call and are set just before the nested `create/up
 
 #### `UniqueTogetherMixin`
 
-Mixin that allows usage of the `unique_togethre` fields with nested mixins. 
+Mixin that allows usage of the `unique_together` fields with nested mixins. 
 This mixin moves the validation process from `is_valid` to `create/update` call. 
 This is done because the fields that should be used in the `unique_together` validation may not be 
 set on the initial `is_valid` call and are set just before the nested `create/update` call.
