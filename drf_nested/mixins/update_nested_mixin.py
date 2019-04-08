@@ -16,6 +16,7 @@ class UpdateNestedMixin(BaseNestedMixin):
 
             nested_field_types = self.extract_nested_types(nested_fields_data)
 
+            # Updating or creating direct relations like ForeignKeys before we create initial instance
             for field in nested_field_types["direct_relations"]:
                 field_name = field.get('name')
                 field_data = field.get('data')
@@ -25,12 +26,24 @@ class UpdateNestedMixin(BaseNestedMixin):
 
             model_instance = super().update(instance, validated_data)
 
+            # Updating or creating reversed relations like the models that have the current model as ForeignKeys
+            # using created initial instance
             for field in nested_field_types["reverse_relations"]:
-                self._update_or_create_reverse_relation(field.get('name'), field.get('data'), model_instance)
+                field_name = field.get('name')
+                field_data = field.get('data')
+                self._update_or_create_reverse_relation(field_name, field_data, model_instance)
+
+            # Updating or creating generic relations using created initial instance
             for field in nested_field_types["generic_relations"]:
-                self._update_or_create_generic_relation(field.get('name'), field.get('data'), model_instance)
+                field_name = field.get('name')
+                field_data = field.get('data')
+                self._update_or_create_generic_relation(field_name, field_data, model_instance)
+
+            # Updating or creating many-to-many relations using created initial instance
             for field in nested_field_types["many_to_many_fields"]:
-                self._update_or_create_many_to_many_field(field.get('name'), field.get('data'), model_instance)
+                field_name = field.get('name')
+                field_data = field.get('data')
+                self._update_or_create_many_to_many_field(field_name, field_data, model_instance)
         else:
             model_instance = super().update(instance, validated_data)
 

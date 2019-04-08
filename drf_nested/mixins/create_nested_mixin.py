@@ -28,6 +28,7 @@ class CreateNestedMixin(BaseNestedMixin):
 
             nested_field_types = self.extract_nested_types(nested_fields_data)
 
+            # Creating direct relations like ForeignKeys before we create initial instance
             for field in nested_field_types["direct_relations"]:
                 field_name = field.get('name')
                 field_data = field.get('data')
@@ -37,16 +38,20 @@ class CreateNestedMixin(BaseNestedMixin):
 
             model_instance = super().create(validated_data)
 
+            # Creating reversed relations like the models that have the current model as ForeignKeys
+            # using created initial instance
             for field in nested_field_types["reverse_relations"]:
                 field_name = field.get('name')
                 field_data = field.get('data')
                 self._update_or_create_reverse_relation(field_name, field_data, model_instance)
 
+            # Creating generic relations using created initial instance
             for field in nested_field_types["generic_relations"]:
                 field_name = field.get('name')
                 field_data = field.get('data')
                 self._update_or_create_generic_relation(field_name, field_data, model_instance)
 
+            # Creating many-to-many relations using created initial instance
             for field in nested_field_types["many_to_many_fields"]:
                 field_name = field.get('name')
                 field_data = field.get('data')
