@@ -12,170 +12,71 @@ This package adds support for:
 
 It also provides mixins for handling `Unique` and `UniqueTogether` validators.
 
+## Mixins
+
+### Nested Serializer Mixins
+
+#### `BaseNestedMixin`
+
+Base mixin that contains the methods for retrieval of all related fields of the serializer model. 
+It also provides all the `update_or_create` methods for each type of fields 
+(`direct relation`, `reverse relation`, `many-to-many relation` and `generic relation`).
+
+#### `CreateNestedMixin`
+
+Mixin that allows creation of the nested models on serializer `create` call. 
+You can provide a list of fields that should be forbidden on create, 
+the list of fields should be placed into the `forbidden_on_create` 
+field on serializer `Meta` class.
+Mixin uses `BaseNestedMixin` properties and `update_and_create` methods to create nested fields.
+
+#### `UpdateNestedMixin`
+
+Mixin that allows modification of the nested models on serializer `update` call.
+Mixin uses `BaseNestedMixin` properties and `update_and_create` methods to update nested fields.
+
+### Validator Mixins
+
+#### `UniqueFieldMixin`
+
+Mixin that allows usage of the `unique` fields with nested mixins. 
+This mixin moves the validation process from `is_valid` to `create/update` call. 
+This is done because the fields that should be used in the `unique` validation may not be 
+set on the initial `is_valid` call and are set just before the nested `create/update` call. 
+
+#### `UniqueTogetherMixin`
+
+Mixin that allows usage of the `unique_togethre` fields with nested mixins. 
+This mixin moves the validation process from `is_valid` to `create/update` call. 
+This is done because the fields that should be used in the `unique_together` validation may not be 
+set on the initial `is_valid` call and are set just before the nested `create/update` call.
+
+### Helper Mixins
+
+#### `NestableMixin`
+
+Mixin that allows to specify the name of the nested field by setting `write_source` if the initial `source` of the field is different 
+from the field name or the initial `source` is not writable (a property, for example).
+
+#### `ThroughMixin`
+
+Mixin that allows to specify if `through` model should be connected to current model after the `through` model `create/update` call.
+
+#### `GenericRelationMixin`
+
+Mixin that should be used on serializers that represent connected by `GenericRelation` models.
+
 ## Examples
 
-__models.py__
+You can see an example project in `examples/` directory.
 
-```python
-from django.db import models
-from django.contrib.contenttypes.fields import GenericRelation
+## Notes
 
-class User(models.Model):
-    username = models.CharField(max_length=50, unique=True)
-    is_active = models.BooleanField(default=True)
-
-
-class Comment(models.Model):
-    text = models.CharField(max_length=400)
-    object_id = models.PositiveIntegerField()
-    content_type = models.ForeignKey("contenttypes.ContentType", on_delete=models.CASCADE,
-                                     related_name="comments")
-
-
-class Group(models.Model):
-    name = models.CharField(max_length=200)
-    members = models.ManyToManyField("nested_example.User", related_name="groups")
-    company = models.ForeignKey("nested_example.Company", related_name="groups", on_delete=models.CASCADE,
-                                null=True, blank=True)
-
-    @property
-    def active_users(self):
-        return self.members.filter(is_active=True)
-
-
-class Employee(models.Model):
-    status = models.CharField(max_length=200)
-    user = models.ForeignKey("nested_example.User", related_name="employees", on_delete=models.CASCADE)
-
-
-class Manager(models.Model):
-    level = models.CharField(max_length=200)
-    user = models.ForeignKey("nested_example.User", related_name="managers", on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ("level", "user")
-
-
-class Role(models.Model):
-    name = models.CharField(max_length=200)
-    permission = models.CharField(max_length=200)
-    employees = models.ManyToManyField("nested_example.Employee", related_name="roles",
-                                       through="nested_example.EmployeeRole")
-
-
-class EmployeeRole(models.Model):
-    name = models.CharField(max_length=200)
-    employee = models.ForeignKey("nested_example.Employee", related_name="employee_roles", on_delete=models.CASCADE)
-    role = models.ForeignKey("nested_example.Role", related_name="employee_roles", on_delete=models.CASCADE)
-
-
-class Company(models.Model):
-    name = models.CharField(max_length=200)
-    managers = models.ManyToManyField("nested_example.Manager", related_name="companies")
-    comments = GenericRelation(Comment, related_name="companies")
-```
-
-__serializers.py__
-```python
-from django.contrib.contenttypes.models import ContentType
-from rest_framework import serializers
-
-from drf_nested.mixins import (NestableMixin, CreateNestedMixin, UpdateNestedMixin, GenericRelationMixin,
-                               UniqueTogetherMixin)
-from .models import User, Group, Manager, Employee, EmployeeRole, Role, Company, Comment
-
-
-class NestedSerializer(CreateNestedMixin, UpdateNestedMixin):
-    pass
-
-
-class UserSerializer(NestableMixin, serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = User
-        fields = ('username', 'is_active')
-
-
-class CommentSerializer(GenericRelationMixin, serializers.HyperlinkedModelSerializer):
-    content_type = serializers.PrimaryKeyRelatedField(queryset=ContentType.objects.all())
-
-    class Meta:
-        model = Comment
-        fields = ('text', 'object_id', 'content_type', 'content_type_id',)
-
-
-class GroupSerializer(NestedSerializer, serializers.HyperlinkedModelSerializer):
-    members = UserSerializer(required=False, many=True, source="active_users",
-                             write_source="members")
-
-    class Meta:
-        model = Group
-        fields = ('name', 'members',)
-
-
-class SimpleGroupSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = Group
-        fields = ('name',)
-
-
-class UserGroupSerializer(NestedSerializer, serializers.HyperlinkedModelSerializer):
-    groups = SimpleGroupSerializer(many=True, required=False)
-
-    class Meta:
-        model = User
-        fields = ('username', 'is_active', "groups")
-
-
-class ManagerSerializer(UniqueTogetherMixin, CreateNestedMixin, UpdateNestedMixin,
-                        serializers.HyperlinkedModelSerializer):
-    user = UserSerializer()
-
-    class Meta:
-        model = Manager
-        fields = ('user', 'level')
-
-
-class EmployeeSerializer(NestedSerializer, serializers.HyperlinkedModelSerializer):
-    user = UserSerializer()
-
-    class Meta:
-        model = Employee
-        fields = ('user', 'status')
-
-
-class EmployeeRoleSerializer(NestableMixin, serializers.HyperlinkedModelSerializer):
-    employee_id = serializers.IntegerField()
-    role_id = serializers.IntegerField()
-
-    class Meta:
-        model = EmployeeRole
-        fields = ('employee_id', 'role_id', 'name')
-
-
-class RoleSerializer(NestedSerializer, serializers.HyperlinkedModelSerializer):
-    employees = EmployeeRoleSerializer(many=True, required=False, write_source="employee_roles",
-                                       source="employee_roles")
-
-    class Meta:
-        model = Role
-        fields = ('employees', 'permission', 'name')
-
-
-class CompanySerializer(NestedSerializer, serializers.HyperlinkedModelSerializer):
-    managers = ManagerSerializer(many=True, required=False)
-    comments = CommentSerializer(many=True, required=False)
-
-    class Meta:
-        model = Company
-        fields = ('managers', 'comments', 'name')
-        
-```
-
-You can see examples of usage in `examples/` directory.
-
-> Note: If you are using a Many-to-Many field with `source` property or you have a `through` model on your serializer, 
+> If you are using a Many-to-Many field with `source` property or you have a `through` model on your serializer, 
 you should add a `NestableMixin` to the target serializer and add a `write_source` field when you initialize that serializer.
 
 > In case of the `source` property you should add an actual model field that would allow you to properly connect your model with related ones. 
 
 > In case of the `through` model you should have it set to the `related_name` of the connected `through` model
+
+> You can also use `ThroughMixin` and set `connect_to_model` to False if you want to have the ability to keep the `through` model connection in case the `through` model ForeignKey should be different from the current model.

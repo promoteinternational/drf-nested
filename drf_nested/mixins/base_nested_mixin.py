@@ -168,8 +168,12 @@ class BaseNestedMixin(serializers.ModelSerializer):
             serializer.child.partial = self.partial
 
             if self._should_be_deleted_on_update(field_name):
+                # Removing connected relations that are not provided in the data
                 self._delete_difference_on_update(model_instance, data, serializer.child.Meta.model, field_name)
 
+            # If there is an instance that can be updated by the provided data - find
+            # and use provided data to update existing instance.
+            # In other case we add data to the list for further creation and create all the items at once
             items_to_create = []
             for item in data:
                 item[related_name] = model_instance
@@ -220,8 +224,12 @@ class BaseNestedMixin(serializers.ModelSerializer):
             serializer.child.partial = self.partial
 
             if self._should_be_deleted_on_update(field_name):
+                # Removing connected relations that are not provided in the data
                 self._delete_difference_on_update(model_instance, data, serializer.child.Meta.model, field_name)
 
+            # If there is an instance that can be updated by the provided data - find
+            # and use provided data to update existing instance.
+            # In other case we create that item and connect all the items to the current model at once
             items_to_add = []
             for item in data:
                 pk = item.get(self._get_field_pk_name(field_name))
@@ -258,10 +266,12 @@ class BaseNestedMixin(serializers.ModelSerializer):
             serializer.child.partial = self.partial
 
             if self._should_be_deleted_on_update(field_name):
+                # Removing connected relations that are not provided in the data
                 self._delete_difference_on_update(model_instance, data, serializer.child.Meta.model, field_name)
 
             for item in data:
                 content_type = ContentType.objects.get_for_model(model_instance.__class__)
+                # Setting special for GenericRelation model fields
                 item.update({"content_type_id": content_type.id,
                              "object_id": model_instance.id})
                 pk = item.get(self._get_field_pk_name(field_name))
