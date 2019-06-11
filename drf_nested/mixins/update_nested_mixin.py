@@ -21,8 +21,10 @@ class UpdateNestedMixin(BaseNestedMixin):
                 field_name = field.get('name')
                 field_data = field.get('data')
                 if isinstance(field_data, dict):
-                    nested_instance = self._update_or_create_direct_relations(field_name, field.get('data'))
+                    nested_instance = self._update_or_create_direct_relations(field_name, field_data)
                     validated_data[field.get("original_name")] = nested_instance
+                elif field_data is None:
+                    validated_data[field.get("original_name")] = field_data
 
             model_instance = super().update(instance, validated_data)
 

@@ -24,29 +24,6 @@ class CommentSerializer(GenericRelationMixin, serializers.HyperlinkedModelSerial
         fields = ('text', 'object_id', 'content_type', 'content_type_id',)
 
 
-class GroupSerializer(NestedSerializer, serializers.HyperlinkedModelSerializer):
-    members = UserSerializer(required=False, many=True, source="active_users",
-                             write_source="members")
-
-    class Meta:
-        model = Group
-        fields = ('name', 'members',)
-
-
-class SimpleGroupSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = Group
-        fields = ('name',)
-
-
-class UserGroupSerializer(NestedSerializer, serializers.HyperlinkedModelSerializer):
-    groups = SimpleGroupSerializer(many=True, required=False)
-
-    class Meta:
-        model = User
-        fields = ('username', 'is_active', "groups")
-
-
 class ManagerSerializer(UniqueTogetherMixin, CreateNestedMixin, UpdateNestedMixin,
                         serializers.HyperlinkedModelSerializer):
     user = UserSerializer()
@@ -57,7 +34,7 @@ class ManagerSerializer(UniqueTogetherMixin, CreateNestedMixin, UpdateNestedMixi
 
 
 class EmployeeSerializer(NestedSerializer, serializers.HyperlinkedModelSerializer):
-    user = UserSerializer()
+    user = UserSerializer(required=False, allow_null=True)
 
     class Meta:
         model = Employee
@@ -82,10 +59,34 @@ class RoleSerializer(NestedSerializer, serializers.HyperlinkedModelSerializer):
         fields = ('employees', 'permission', 'name')
 
 
-class CompanySerializer(NestedSerializer, serializers.HyperlinkedModelSerializer):
+class CompanySerializer(NestableMixin, NestedSerializer, serializers.HyperlinkedModelSerializer):
     managers = ManagerSerializer(many=True, required=False)
     comments = CommentSerializer(many=True, required=False)
 
     class Meta:
         model = Company
         fields = ('managers', 'comments', 'name')
+
+
+class GroupSerializer(NestedSerializer, serializers.HyperlinkedModelSerializer):
+    members = UserSerializer(required=False, many=True, source="active_users",
+                             write_source="members")
+    company = CompanySerializer(required=False, allow_null=True)
+
+    class Meta:
+        model = Group
+        fields = ('name', 'members', 'company')
+
+
+class SimpleGroupSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Group
+        fields = ('name',)
+
+
+class UserGroupSerializer(NestedSerializer, serializers.HyperlinkedModelSerializer):
+    groups = SimpleGroupSerializer(many=True, required=False, allow_null=True)
+
+    class Meta:
+        model = User
+        fields = ('username', 'is_active', "groups")
