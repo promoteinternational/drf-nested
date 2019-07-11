@@ -176,6 +176,7 @@ class BaseNestedMixin(serializers.ModelSerializer):
             # In other case we add data to the list for further creation and create all the items at once
             items_to_create = []
             for item in data:
+                item[related_name] = model_instance
                 pk = item.get(self._get_field_pk_name(field_name))
 
                 if pk is not None:
