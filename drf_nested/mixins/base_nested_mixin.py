@@ -18,10 +18,10 @@ class BaseNestedMixin(serializers.ModelSerializer):
     Provides all the needed methods and properties for manipulating nested data.
     """
 
-    def __init__(self, instance=None, data: Union[empty, dict] = empty, **kwargs):
+    def __init__(self, instance=None, data: Union[empty, dict, list] = empty, **kwargs):
         super().__init__(instance, data, **kwargs)
 
-        if data is not empty:
+        if data is not empty and not isinstance(data, list) and data is not None:
             data, nested_fields_data = self._get_nested_fields(data)
 
             # For all nested fields, initialize serializer with model instances
@@ -31,7 +31,8 @@ class BaseNestedMixin(serializers.ModelSerializer):
                 if serializer:
                     serializer_kwargs = (serializer.child._kwargs if "child" in serializer._kwargs
                                          else serializer._kwargs)
-                    serializer_kwargs.update(context=self.context)
+                    serializer_kwargs.update(context=self.context,
+                                             data=nested_data)
 
                     # Finding either single pk value or list of them,
                     # in case the nested serializer is a ListSerializer instance
@@ -174,19 +175,30 @@ class BaseNestedMixin(serializers.ModelSerializer):
             # If there is an instance that can be updated by the provided data - find
             # and use provided data to update existing instance.
             # In other case we add data to the list for further creation and create all the items at once
-            items_to_create = []
-            for item in data:
-                item[related_name] = model_instance
-                pk = item.get(self._get_field_pk_name(field_name))
+            if hasattr(serializer.child, "initial_data"):
+                serializer_initial_data = deepcopy(serializer.child.initial_data)
+                for item, initial_item in zip(data, serializer.child.initial_data):
+                    serializer.child.initial_data = initial_item
+                    item[related_name] = model_instance
+                    pk = item.get(self._get_field_pk_name(field_name))
 
-                if pk is not None:
-                    nested_instance = serializer.child.Meta.model.objects.get(pk=pk)
-                    serializer.child.update(nested_instance, item)
-                else:
-                    items_to_create.append(item)
+                    if pk is not None:
+                        nested_instance = serializer.child.Meta.model.objects.get(pk=pk)
+                        serializer.child.update(nested_instance, item)
+                    else:
+                        serializer.child.create(item)
+                serializer.child.initial_data = serializer_initial_data
 
-            if items_to_create:
-                serializer.create(items_to_create)
+            else:
+                for item in data:
+                    item[related_name] = model_instance
+                    pk = item.get(self._get_field_pk_name(field_name))
+
+                    if pk is not None:
+                        nested_instance = serializer.child.Meta.model.objects.get(pk=pk)
+                        serializer.child.update(nested_instance, item)
+                    else:
+                        serializer.child.create(item)
         else:
             pk = data.get(self._get_field_pk_name(field_name))
             data[related_name] = model_instance
@@ -231,14 +243,28 @@ class BaseNestedMixin(serializers.ModelSerializer):
             # and use provided data to update existing instance.
             # In other case we create that item and connect all the items to the current model at once
             items_to_add = []
-            for item in data:
-                pk = item.get(self._get_field_pk_name(field_name))
-                if pk is not None:
-                    nested_instance = serializer.child.Meta.model.objects.get(pk=pk)
-                    nested_instance = serializer.child.update(nested_instance, item)
-                else:
-                    nested_instance = serializer.child.create(dict(item))
-                items_to_add.append(nested_instance)
+            if hasattr(serializer.child, "initial_data"):
+                serializer_initial_data = deepcopy(serializer.child.initial_data)
+                for item, initial_item in zip(data, serializer.child.initial_data):
+                    serializer.child.initial_data = initial_item
+                    pk = item.get(self._get_field_pk_name(field_name))
+                    if pk is not None:
+                        nested_instance = serializer.child.Meta.model.objects.get(pk=pk)
+                        nested_instance = serializer.child.update(nested_instance, item)
+                    else:
+                        nested_instance = serializer.child.create(dict(item))
+                    items_to_add.append(nested_instance)
+                serializer.child.initial_data = serializer_initial_data
+            else:
+                for item in data:
+                    pk = item.get(self._get_field_pk_name(field_name))
+                    if pk is not None:
+                        nested_instance = serializer.child.Meta.model.objects.get(pk=pk)
+                        nested_instance = serializer.child.update(nested_instance, item)
+                    else:
+                        nested_instance = serializer.child.create(dict(item))
+                    items_to_add.append(nested_instance)
+
             if not issubclass(serializer.child.__class__, ThroughMixin) or serializer.child.connect_to_model:
                 model_instance.__getattribute__(self.get_model_field_name(field_name)).add(*items_to_add)
 
