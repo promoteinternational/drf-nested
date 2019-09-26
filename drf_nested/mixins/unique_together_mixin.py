@@ -51,23 +51,28 @@ class UniqueTogetherMixin(serializers.ModelSerializer):
             except ValidationError as exc:
                 raise ValidationError({"non_field_errors": exc.detail})
 
+    def _set_instance(self, validated_data, queryset):
+        pk = self.get_model_pk()
+        self.instance = None
+        if pk in validated_data:
+            try:
+                instance = queryset.get(pk=validated_data.get(pk))
+                self.instance = instance
+            except queryset.model.DoesNotExist:
+                pass
+
     def _validate_unique_together(self, validated_data):
         # It is possible that instance set for the nested serializer is a QuerySet
         # In that case we run validation for each item on the list individually
         if isinstance(self.instance, QuerySet):
             queryset = self.instance
-            pk = self.get_model_pk()
-            self.instance = None
-            if pk in validated_data:
-                try:
-                    instance = queryset.get(pk=validated_data.get(pk))
-                    self.instance = instance
-                except queryset.model.DoesNotExist:
-                    pass
+            self._set_instance(validated_data, queryset)
 
             self._validate_unique_together_instance(validated_data)
             self.instance = queryset
         else:
+            if self.instance is None:
+                self._set_instance(validated_data, self.Meta.model.objects.all())
             self._validate_unique_together_instance(validated_data)
 
     def create(self, validated_data):
