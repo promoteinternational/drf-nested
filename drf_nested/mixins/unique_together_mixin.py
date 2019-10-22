@@ -1,13 +1,14 @@
 from typing import List, Tuple
 
 from django.db.models import QuerySet
-from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import empty
 from rest_framework.validators import UniqueTogetherValidator
 
+from drf_nested.mixins.base_nestable_mixin import BaseNestableMixin
 
-class UniqueTogetherMixin(serializers.ModelSerializer):
+
+class UniqueTogetherMixin(BaseNestableMixin):
     """
     Extracts unique together validators for every field.
     The validators are being run on `create`/`update` instead of `is_valid`
@@ -27,13 +28,6 @@ class UniqueTogetherMixin(serializers.ModelSerializer):
             self.Meta.unique_together_validators = []
         self.Meta.unique_together_validators.append(fields)
 
-    def get_model_pk(self):
-        if isinstance(self, serializers.ListSerializer):
-            model = self.child.Meta.model
-        else:
-            model = self.Meta.model
-        return model._meta.pk.attname
-
     @property
     def unique_together_validators(self):
         return self.Meta.unique_together_validators if self.Meta.unique_together_validators is not None else []
@@ -50,16 +44,6 @@ class UniqueTogetherMixin(serializers.ModelSerializer):
                 unique_together_validator(validated_data)
             except ValidationError as exc:
                 raise ValidationError({"non_field_errors": exc.detail})
-
-    def _set_instance(self, validated_data, queryset):
-        pk = self.get_model_pk()
-        self.instance = None
-        if pk in validated_data:
-            try:
-                instance = queryset.get(pk=validated_data.get(pk))
-                self.instance = instance
-            except queryset.model.DoesNotExist:
-                pass
 
     def _validate_unique_together(self, validated_data):
         # It is possible that instance set for the nested serializer is a QuerySet
