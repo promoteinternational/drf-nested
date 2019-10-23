@@ -12,7 +12,7 @@ class BaseNestableMixin(serializers.ModelSerializer):
     def _set_instance(self, validated_data, queryset):
         pk = self._get_model_pk()
         self.instance = None
-        if validated_data and pk in validated_data:
+        if validated_data and isinstance(validated_data, dict) and pk in validated_data:
             try:
                 instance = queryset.get(pk=validated_data.get(pk))
                 self.instance = instance
