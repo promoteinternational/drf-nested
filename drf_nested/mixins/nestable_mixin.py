@@ -2,7 +2,7 @@ from typing import Optional
 
 from rest_framework.fields import empty
 
-from drf_nested.mixins.base_nestable_mixin import BaseNestableMixin
+from .base_nestable_mixin import BaseNestableMixin
 from drf_nested.utils.queryset_to_instance import nested_validate, nested_update
 
 
