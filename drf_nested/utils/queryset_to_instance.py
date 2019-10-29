@@ -32,7 +32,7 @@ class QuerySetInstanceManager:
 
     def __enter__(self):
         self.original_instance = self.serializer_instance.instance
-        if self.serializer_instance.instance and isinstance(self.serializer_instance.instance, QuerySet):
+        if self.serializer_instance.instance is not None and isinstance(self.serializer_instance.instance, QuerySet):
             self.serializer_instance._set_instance(self.validated_data,
                                                    self.original_instance)
 
