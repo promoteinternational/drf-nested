@@ -20,6 +20,7 @@ class CreateNestedMixin(BaseNestedMixin):
         :param validated_data:
         :return:
         """
+        self._errors = {}
         if self._has_nested_fields(validated_data):
             if any([self._is_field_forbidden(request_field) for request_field in validated_data]):
                 raise ValidationError({"nested_field": [_('Nested fields are not allowed on create.')]})
@@ -57,6 +58,8 @@ class CreateNestedMixin(BaseNestedMixin):
                 field_data = field.get('data')
                 self._update_or_create_many_to_many_field(field_name, field_data, model_instance)
 
+            if self._errors:
+                raise ValidationError(self._errors)
         else:
             model_instance = super().create(validated_data)
 

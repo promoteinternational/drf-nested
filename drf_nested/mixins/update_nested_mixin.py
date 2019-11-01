@@ -1,4 +1,5 @@
 from django.db import transaction
+from rest_framework.exceptions import ValidationError
 
 from .base_nested_mixin import BaseNestedMixin
 
@@ -11,6 +12,7 @@ class UpdateNestedMixin(BaseNestedMixin):
         :param validated_data:
         :return:
         """
+        self._errors = {}
         if self._has_nested_fields(validated_data):
             validated_data, nested_fields_data = self._get_nested_fields(validated_data, remove_fields=True)
 
@@ -46,6 +48,9 @@ class UpdateNestedMixin(BaseNestedMixin):
                 field_name = field.get('name')
                 field_data = field.get('data')
                 self._update_or_create_many_to_many_field(field_name, field_data, model_instance)
+
+            if self._errors:
+                raise ValidationError(self._errors)
         else:
             model_instance = super().update(instance, validated_data)
 

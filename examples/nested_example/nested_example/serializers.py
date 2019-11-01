@@ -1,5 +1,4 @@
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import QuerySet
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
@@ -16,6 +15,18 @@ class NestedSerializer(CreateNestedMixin, UpdateNestedMixin):
 class UserSerializer(NestableMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.IntegerField(required=False)
 
+    @nested_validate
+    def validate(self, attrs):
+        username = attrs.get('username')
+        if username and len(username) > 20:
+            raise ValidationError({"username": ["Username shouldn't be greater than 20 symbols"]})
+        return super().validate(attrs)
+
+    def create(self, validated_data):
+        if validated_data.get("is_active") is False:
+            raise ValidationError({"is_active": ["User should be active"]})
+        return super().create(validated_data)
+
     class Meta:
         model = User
         fields = ('id', 'username', 'is_active')
@@ -24,6 +35,11 @@ class UserSerializer(NestableMixin, serializers.HyperlinkedModelSerializer):
 class CommentSerializer(GenericRelationMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.IntegerField(required=False)
     content_type = serializers.PrimaryKeyRelatedField(queryset=ContentType.objects.all())
+
+    def create(self, validated_data):
+        if len(validated_data.get("text")) > 20:
+            raise ValidationError({"text": ["Text shouldn't be greater than 20 symbols"]})
+        return super().create(validated_data)
 
     class Meta:
         model = Comment
@@ -34,6 +50,11 @@ class ManagerSerializer(UniqueTogetherMixin, CreateNestedMixin, UpdateNestedMixi
                         serializers.HyperlinkedModelSerializer):
     id = serializers.IntegerField(required=False)
     user = UserSerializer()
+
+    def create(self, validated_data):
+        if validated_data.get("level") == "super high":
+            raise ValidationError({"level": ["Level shouldn't be super high"]})
+        return super().create(validated_data)
 
     class Meta:
         model = Manager
@@ -95,8 +116,9 @@ class SimpleGroupSerializer(NestableMixin, serializers.HyperlinkedModelSerialize
 
     @nested_validate
     def validate(self, attrs):
-        if self.instance and isinstance(self.instance, QuerySet):
-            raise ValidationError({"Shouldn't be a queryset"})
+        name = attrs.get('name')
+        if name and len(name) > 10:
+            raise ValidationError({"name": ["Name shouldn't be greater than 10 symbols"]})
         return super().validate(attrs)
 
     class Meta:

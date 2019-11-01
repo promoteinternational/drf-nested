@@ -8,8 +8,9 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.fields import empty
 from rest_framework.serializers import ListSerializer
 
-from .through_mixin import ThroughMixin
 from .nestable_mixin import NestableMixin
+from .through_mixin import ThroughMixin
+from ..utils import NestedListExceptionHandler, NestedInstanceExceptionHandler
 
 
 class BaseNestedMixin(serializers.ModelSerializer):
@@ -130,12 +131,13 @@ class BaseNestedMixin(serializers.ModelSerializer):
     def _update_or_create_direct_relations(self, field_name, data):
         serializer = self._get_serializer_by_field_name(field_name)
         pk = data.get(self._get_field_pk_name(field_name))
-        if pk is not None:
-            nested_instance = serializer.Meta.model.objects.get(pk=pk)
-            direct_relation = serializer.update(nested_instance, data)
-        else:
-            direct_relation = serializer.create(dict(data))
-        return direct_relation
+        with NestedInstanceExceptionHandler(field_name, self):
+            if pk is not None:
+                nested_instance = serializer.Meta.model.objects.get(pk=pk)
+                direct_relation = serializer.update(nested_instance, data)
+            else:
+                direct_relation = serializer.create(dict(data))
+            return direct_relation
 
     # Reverse relations
     @property
@@ -180,35 +182,39 @@ class BaseNestedMixin(serializers.ModelSerializer):
             if hasattr(serializer.child, "initial_data"):
                 serializer_initial_data = deepcopy(serializer.child.initial_data)
                 for item, initial_item in zip(data, serializer.child.initial_data):
-                    serializer.child.initial_data = initial_item
-                    item[related_name] = model_instance
-                    pk = item.get(self._get_field_pk_name(field_name))
+                    with NestedListExceptionHandler(field_name, self):
+                        serializer.child.initial_data = initial_item
+                        item[related_name] = model_instance
+                        pk = item.get(self._get_field_pk_name(field_name))
 
-                    if pk is not None:
-                        nested_instance = serializer.child.Meta.model.objects.get(pk=pk)
-                        serializer.child.update(nested_instance, item)
-                    else:
-                        serializer.child.create(item)
+                        if pk is not None:
+                            nested_instance = serializer.child.Meta.model.objects.get(pk=pk)
+                            serializer.child.update(nested_instance, item)
+                        else:
+                            serializer.child.create(item)
+
                 serializer.child.initial_data = serializer_initial_data
 
             else:
                 for item in data:
-                    item[related_name] = model_instance
-                    pk = item.get(self._get_field_pk_name(field_name))
+                    with NestedListExceptionHandler(field_name, self):
+                        item[related_name] = model_instance
+                        pk = item.get(self._get_field_pk_name(field_name))
 
-                    if pk is not None:
-                        nested_instance = serializer.child.Meta.model.objects.get(pk=pk)
-                        serializer.child.update(nested_instance, item)
-                    else:
-                        serializer.child.create(item)
+                        if pk is not None:
+                            nested_instance = serializer.child.Meta.model.objects.get(pk=pk)
+                            serializer.child.update(nested_instance, item)
+                        else:
+                            serializer.child.create(item)
         else:
-            pk = data.get(self._get_field_pk_name(field_name))
-            data[related_name] = model_instance
-            if pk is not None:
-                nested_instance = serializer.Meta.model.objects.get(pk=pk)
-                serializer.update(nested_instance, data)
-            else:
-                serializer.create(dict(data))
+            with NestedInstanceExceptionHandler(field_name, self):
+                pk = data.get(self._get_field_pk_name(field_name))
+                data[related_name] = model_instance
+                if pk is not None:
+                    nested_instance = serializer.Meta.model.objects.get(pk=pk)
+                    serializer.update(nested_instance, data)
+                else:
+                    serializer.create(dict(data))
 
     # Many-to-many fields
     @property
@@ -251,23 +257,28 @@ class BaseNestedMixin(serializers.ModelSerializer):
                 serializer_initial_data = deepcopy(serializer.child.initial_data)
                 for item, initial_item in zip(data, serializer.child.initial_data):
                     serializer.child.initial_data = initial_item
-                    pk = item.get(self._get_field_pk_name(field_name))
-                    if pk is not None:
-                        nested_instance = serializer.child.Meta.model.objects.get(pk=pk)
-                        nested_instance = serializer.child.update(nested_instance, item)
-                    else:
-                        nested_instance = serializer.child.create(dict(item))
-                    items_to_add.append(nested_instance)
-                serializer.child.initial_data = serializer_initial_data
+                    with NestedListExceptionHandler(field_name, self):
+                        pk = item.get(self._get_field_pk_name(field_name))
+                        if pk is not None:
+                            nested_instance = serializer.child.Meta.model.objects.get(pk=pk)
+                            nested_instance = serializer.child.update(nested_instance, item)
+                        else:
+                            nested_instance = serializer.child.create(dict(item))
+                        if nested_instance:
+                            items_to_add.append(nested_instance)
+                    serializer.child.initial_data = serializer_initial_data
+
             else:
                 for item in data:
-                    pk = item.get(self._get_field_pk_name(field_name))
-                    if pk is not None:
-                        nested_instance = serializer.child.Meta.model.objects.get(pk=pk)
-                        nested_instance = serializer.child.update(nested_instance, item)
-                    else:
-                        nested_instance = serializer.child.create(dict(item))
-                    items_to_add.append(nested_instance)
+                    with NestedListExceptionHandler(field_name, self):
+                        pk = item.get(self._get_field_pk_name(field_name))
+                        if pk is not None:
+                            nested_instance = serializer.child.Meta.model.objects.get(pk=pk)
+                            nested_instance = serializer.child.update(nested_instance, item)
+                        else:
+                            nested_instance = serializer.child.create(dict(item))
+                        if nested_instance:
+                            items_to_add.append(nested_instance)
 
             if not issubclass(serializer.child.__class__, ThroughMixin) or serializer.child.connect_to_model:
                 model_instance.__getattribute__(self.get_model_field_name(field_name)).add(*items_to_add)
@@ -300,16 +311,17 @@ class BaseNestedMixin(serializers.ModelSerializer):
                 self._delete_difference_on_update(model_instance, data, serializer.child.Meta.model, field_name)
 
             for item in data:
-                content_type = ContentType.objects.get_for_model(model_instance.__class__)
-                # Setting special for GenericRelation model fields
-                item.update({"content_type_id": content_type.id,
-                             "object_id": model_instance.id})
-                pk = item.get(self._get_field_pk_name(field_name))
-                if pk is not None:
-                    nested_instance = serializer.child.Meta.model.objects.get(pk=pk)
-                    serializer.child.update(nested_instance, item)
-                else:
-                    serializer.child.create(dict(item))
+                with NestedListExceptionHandler(field_name, self):
+                    content_type = ContentType.objects.get_for_model(model_instance.__class__)
+                    # Setting special for GenericRelation model fields
+                    item.update({"content_type_id": content_type.id,
+                                 "object_id": model_instance.id})
+                    pk = item.get(self._get_field_pk_name(field_name))
+                    if pk is not None:
+                        nested_instance = serializer.child.Meta.model.objects.get(pk=pk)
+                        serializer.child.update(nested_instance, item)
+                    else:
+                        serializer.child.create(dict(item))
 
     # Helper functions
 
