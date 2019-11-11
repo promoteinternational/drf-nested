@@ -184,7 +184,8 @@ class BaseNestedMixin(serializers.ModelSerializer):
                 for item, initial_item in zip(data, serializer.child.initial_data):
                     with NestedListExceptionHandler(field_name, self):
                         serializer.child.initial_data = initial_item
-                        item[related_name] = model_instance
+                        if not self._should_preserve_provided(serializer.child):
+                            item[related_name] = model_instance
                         pk = item.get(self._get_field_pk_name(field_name))
 
                         if pk is not None:
@@ -198,7 +199,8 @@ class BaseNestedMixin(serializers.ModelSerializer):
             else:
                 for item in data:
                     with NestedListExceptionHandler(field_name, self):
-                        item[related_name] = model_instance
+                        if not self._should_preserve_provided(serializer.child):
+                            item[related_name] = model_instance
                         pk = item.get(self._get_field_pk_name(field_name))
 
                         if pk is not None:
@@ -209,7 +211,8 @@ class BaseNestedMixin(serializers.ModelSerializer):
         else:
             with NestedInstanceExceptionHandler(field_name, self):
                 pk = data.get(self._get_field_pk_name(field_name))
-                data[related_name] = model_instance
+                if not self._should_preserve_provided(serializer):
+                    data[related_name] = model_instance
                 if pk is not None:
                     nested_instance = serializer.Meta.model.objects.get(pk=pk)
                     serializer.update(nested_instance, data)
@@ -280,7 +283,8 @@ class BaseNestedMixin(serializers.ModelSerializer):
                         if nested_instance:
                             items_to_add.append(nested_instance)
 
-            if not issubclass(serializer.child.__class__, ThroughMixin) or serializer.child.connect_to_model:
+            if ((not issubclass(serializer.child.__class__, ThroughMixin) or serializer.child.connect_to_model) and
+                    not self._should_preserve_provided(serializer.child)):
                 model_instance.__getattribute__(self.get_model_field_name(field_name)).add(*items_to_add)
 
     # Generic relations
@@ -314,8 +318,9 @@ class BaseNestedMixin(serializers.ModelSerializer):
                 with NestedListExceptionHandler(field_name, self):
                     content_type = ContentType.objects.get_for_model(model_instance.__class__)
                     # Setting special for GenericRelation model fields
-                    item.update({"content_type_id": content_type.id,
-                                 "object_id": model_instance.id})
+                    if not self._should_preserve_provided(serializer.child):
+                        item.update({"content_type_id": content_type.id,
+                                     "object_id": model_instance.id})
                     pk = item.get(self._get_field_pk_name(field_name))
                     if pk is not None:
                         nested_instance = serializer.child.Meta.model.objects.get(pk=pk)
@@ -346,6 +351,9 @@ class BaseNestedMixin(serializers.ModelSerializer):
     def _has_nested_fields(self, validated_data):
         fields = [self.get_model_field_name(field_name) for field_name in validated_data]
         return any([field in self.nested_field_names for field in fields])
+
+    def _should_preserve_provided(self, serializer):
+        return isinstance(serializer, NestableMixin) and serializer.preserve_provided
 
     def _delete_difference_on_update(self, instance, objects, model_class, field_name):
         """
