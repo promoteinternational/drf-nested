@@ -35,7 +35,7 @@ class BaseNestedMixin(serializers.ModelSerializer):
                     serializer_kwargs.update(context=self.context,
                                              data=nested_data)
 
-                    # Initializing the new instances nested serializers with model instances
+                    # Initializing the new instances nested serializers
                     if issubclass(serializer.__class__, ListSerializer):
                         serializer = serializer.child.__class__
                         serializer_kwargs.update({"many": True})
