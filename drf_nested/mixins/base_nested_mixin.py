@@ -18,34 +18,39 @@ class BaseNestedMixin(serializers.ModelSerializer):
     Base class for nested serializers.
     Provides all the needed methods and properties for manipulating nested data.
     """
+    populate_nested_initial_data: bool = False
 
-    # def __init__(self, instance=None, data: Union[empty, dict, list] = empty, **kwargs):
-    #     super().__init__(instance, data, **kwargs)
-    #
-    #     if data is not empty and not isinstance(data, list) and data is not None:
-    #         data, nested_fields_data = self._get_nested_fields(data)
-    #
-    #         # For all nested fields, initialize serializer with model instances
-    #         # for further unique/unique_together checks
-    #         for field_name, nested_data in nested_fields_data.items():
-    #             serializer = self.fields.get(field_name)
-    #             if serializer:
-    #                 serializer_kwargs = (serializer.child._kwargs if "child" in serializer._kwargs
-    #                                      else serializer._kwargs)
-    #                 serializer_kwargs.update(context=self.context,
-    #                                          data=nested_data)
-    #
-    #                 # Initializing the new instances nested serializers
-    #                 if issubclass(serializer.__class__, ListSerializer):
-    #                     serializer = serializer.child.__class__
-    #                     serializer_kwargs.update({"many": True})
-    #                 else:
-    #                     serializer = serializer.__class__
-    #
-    #                 # Replacing old serializer with new one, that is populated with data
-    #                 del self.fields[field_name]
-    #                 new_serializer = serializer(**serializer_kwargs)
-    #                 self.fields[field_name] = new_serializer
+    def __init__(self, instance=None, data: Union[empty, dict, list] = empty, **kwargs):
+        if 'populate_nested_initial_data' in kwargs:
+            self.populate_nested_initial_data = kwargs.pop('populate_nested_initial_data')
+
+        super().__init__(instance, data, **kwargs)
+
+        if self.populate_nested_initial_data:
+            if data is not empty and not isinstance(data, list) and data is not None:
+                data, nested_fields_data = self._get_nested_fields(data)
+
+                # For all nested fields, initialize serializer with model instances
+                # for further unique/unique_together checks
+                for field_name, nested_data in nested_fields_data.items():
+                    serializer = self.fields.get(field_name)
+                    if serializer:
+                        serializer_kwargs = (serializer.child._kwargs if "child" in serializer._kwargs
+                                             else serializer._kwargs)
+                        serializer_kwargs.update(context=self.context,
+                                                 data=nested_data)
+
+                        # Initializing the new instances nested serializers
+                        if issubclass(serializer.__class__, ListSerializer):
+                            serializer = serializer.child.__class__
+                            serializer_kwargs.update({"many": True})
+                        else:
+                            serializer = serializer.__class__
+
+                        # Replacing old serializer with new one, that is populated with data
+                        del self.fields[field_name]
+                        new_serializer = serializer(**serializer_kwargs)
+                        self.fields[field_name] = new_serializer
 
     def _get_field_pk_value(self, field_name: str, nested_data):
         """
