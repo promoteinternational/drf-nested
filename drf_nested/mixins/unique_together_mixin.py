@@ -39,9 +39,14 @@ class UniqueTogetherMixin(BaseNestableMixin):
         for fields in self.unique_together_validators:
             unique_together_validator = UniqueTogetherValidator(self.Meta.model.objects.all(),
                                                                 fields)
-            unique_together_validator.set_context(self)
+            call_args = [validated_data]
+            if hasattr(unique_together_validator, "set_context"):
+                unique_together_validator.set_context(self)
+            else:
+                call_args.append(self)
+
             try:
-                unique_together_validator(validated_data)
+                unique_together_validator(*call_args)
             except ValidationError as exc:
                 raise ValidationError({"non_field_errors": exc.detail})
 
