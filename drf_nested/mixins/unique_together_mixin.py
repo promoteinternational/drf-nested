@@ -6,7 +6,7 @@ from rest_framework.fields import empty
 from rest_framework.validators import UniqueTogetherValidator
 
 from drf_nested.mixins.base_nestable_mixin import BaseNestableMixin
-from drf_nested.utils import nested_validate
+from drf_nested.utils import nested_unique_validate
 
 
 class UniqueTogetherMixin(BaseNestableMixin):
@@ -36,7 +36,7 @@ class UniqueTogetherMixin(BaseNestableMixin):
     def _is_unique_together_validator(self, validator):
         return isinstance(validator, UniqueTogetherValidator)
 
-    @nested_validate
+    @nested_unique_validate
     def _validate_unique_together_instance(self, validated_data):
         for fields in self.unique_together_validators:
             unique_together_validator = UniqueTogetherValidator(self.Meta.model.objects.all(),

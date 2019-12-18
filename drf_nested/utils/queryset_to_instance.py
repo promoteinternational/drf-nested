@@ -25,17 +25,26 @@ def nested_run_validators(run_validators):
     return wrapped
 
 
+def nested_unique_validate(unique_validate):
+    def wrapped(self, data):
+        with QuerySetInstanceManager(self, data, populate_from_model=True):
+            return unique_validate(self, data)
+
+    return wrapped
+
+
 class QuerySetInstanceManager:
-    def __init__(self, serializer_instance, validated_data: dict):
+    def __init__(self, serializer_instance, validated_data: dict, populate_from_model: bool = False):
         self.serializer_instance = serializer_instance
         self.validated_data = validated_data
+        self.populate_from_model = populate_from_model
 
     def __enter__(self):
         self.original_instance = self.serializer_instance.instance
         if self.serializer_instance.instance is not None and isinstance(self.serializer_instance.instance, QuerySet):
             self.serializer_instance._set_instance(self.validated_data,
                                                    self.original_instance)
-        else:
+        elif self.serializer_instance is None and self.populate_from_model:
             self.serializer_instance._set_instance(self.validated_data,
                                                    self.serializer_instance.Meta.model.objects.all())
 
