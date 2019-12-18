@@ -43,7 +43,7 @@ class QuerySetInstanceManager:
         if self.serializer_instance.instance is not None and isinstance(self.serializer_instance.instance, QuerySet):
             self.serializer_instance._set_instance(self.validated_data,
                                                    self.original_instance)
-        elif self.serializer_instance is None:
+        elif self.serializer_instance.instance is None:
             self.serializer_instance._set_instance(self.validated_data,
                                                    self.serializer_instance.Meta.model.objects.all())
 
