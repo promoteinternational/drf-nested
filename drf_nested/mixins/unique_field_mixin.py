@@ -5,6 +5,8 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.fields import empty
 from rest_framework.validators import UniqueValidator
 
+from drf_nested.utils import nested_validate
+
 
 class UniqueFieldMixin(serializers.ModelSerializer):
     """
@@ -45,6 +47,7 @@ class UniqueFieldMixin(serializers.ModelSerializer):
             ]
         return fields
 
+    @nested_validate
     def _validate_unique(self, validated_data):
         for field in self.unique_validators:
             unique_validator = UniqueValidator(self.Meta.model.objects.all())
@@ -55,7 +58,7 @@ class UniqueFieldMixin(serializers.ModelSerializer):
                 call_args.append(self.fields[field])
 
             try:
-                unique_validator(validated_data[field])
+                unique_validator(*call_args)
             except ValidationError as exc:
                 raise ValidationError({field: exc.detail})
 
