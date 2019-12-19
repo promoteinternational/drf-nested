@@ -57,13 +57,13 @@ class UniqueTogetherMixin(BaseNestableMixin):
         # In that case we run validation for each item on the list individually
         if isinstance(self.instance, QuerySet):
             queryset = self.instance
-            self._set_instance(validated_data, queryset)
+            self._set_instance_from_queryset(validated_data, queryset)
 
             self._validate_unique_together_instance(validated_data)
             self.instance = queryset
         else:
             if self.instance is None:
-                self._set_instance(validated_data, self.Meta.model.objects.all())
+                self._set_instance_from_queryset(validated_data, self.Meta.model.objects.all())
             self._validate_unique_together_instance(validated_data)
 
     def create(self, validated_data):
