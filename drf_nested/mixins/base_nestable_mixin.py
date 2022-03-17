@@ -9,7 +9,7 @@ class BaseNestableMixin(serializers.ModelSerializer):
             model = self.Meta.model
         return model._meta.pk.attname
 
-    def _set_instance(self, validated_data, queryset):
+    def _set_instance_from_queryset(self, validated_data, queryset):
         pk = self._get_model_pk()
         self.instance = None
         if validated_data and isinstance(validated_data, dict) and pk in validated_data:
@@ -18,6 +18,18 @@ class BaseNestableMixin(serializers.ModelSerializer):
                 self.instance = instance
             except queryset.model.DoesNotExist:
                 pass
+
+    def _set_instance_from_existing(self, validated_data, instance):
+        pk = self._get_model_pk()
+        if validated_data and isinstance(validated_data, dict) and pk in validated_data:
+            validated_data_pk = validated_data.get(pk)
+            if self.instance is not None:
+                model_class = instance.__class__
+                if self.instance.pk != validated_data_pk:
+                    try:
+                        self.instance = model_class.objects.get(pk=validated_data_pk)
+                    except model_class.model.DoesNotExist:
+                        pass
 
     def __enter__(self):
         pass
