@@ -121,9 +121,18 @@ class BaseNestedMixin(serializers.ModelSerializer):
 
     @property
     def direct_relations(self) -> List[str]:
-        return [field_name for field_name in self.fields
-                if self.get_model_field_name(field_name) in self._serializer_direct_relation_names
-                and not isinstance(self.fields.get(field_name), serializers.PrimaryKeyRelatedField)]
+        return [
+            field_name for field_name in self.fields
+            if self.get_model_field_name(field_name) in self._serializer_direct_relation_names
+               and not any(
+                isinstance(self.fields.get(field_name), field_class)
+                for field_class in self.direct_relation_field_classes
+            )
+        ]
+
+    @property
+    def direct_relation_field_classes(self):
+        return [serializers.PrimaryKeyRelatedField]
 
     def _update_or_create_direct_relations(self, field_name, data):
         serializer = self._get_serializer_by_field_name(field_name)
@@ -151,10 +160,28 @@ class BaseNestedMixin(serializers.ModelSerializer):
 
     @property
     def reverse_relations(self) -> List[str]:
-        return [field_name for field_name in self.fields
-                if self.get_model_field_name(field_name) in self._serializer_reverse_relation_names
-                and not (isinstance(self.fields.get(field_name), serializers.ManyRelatedField) and
-                         isinstance(self.fields.get(field_name).child_relation, serializers.PrimaryKeyRelatedField))]
+        return [
+            field_name for field_name in self.fields
+            if self.get_model_field_name(field_name) in self._serializer_reverse_relation_names
+               and not (
+                    any(
+                        isinstance(self.fields.get(field_name), field_class)
+                        for field_class in self.reverse_relation_field_classes
+                    ) and
+                    any(
+                        isinstance(self.fields.get(field_name).child_relation, field_class)
+                        for field_class in self.reverse_relation_child_field_classes
+                    )
+            )
+        ]
+
+    @property
+    def reverse_relation_field_classes(self):
+        return [serializers.ManyRelatedField]
+
+    @property
+    def reverse_relation_child_field_classes(self):
+        return [serializers.PrimaryKeyRelatedField]
 
     def _get_serializer_by_field_name(self, field_name):
         serializer = self.fields.get(field_name)
@@ -234,10 +261,28 @@ class BaseNestedMixin(serializers.ModelSerializer):
 
     @property
     def many_to_many_fields(self) -> List[str]:
-        return [field_name for field_name in self.fields
-                if self.get_model_field_name(field_name) in self._serializer_many_to_many_field_names
-                and not (isinstance(self.fields.get(field_name), serializers.ManyRelatedField) and
-                         isinstance(self.fields.get(field_name).child_relation, serializers.PrimaryKeyRelatedField))]
+        return [
+            field_name for field_name in self.fields
+            if self.get_model_field_name(field_name) in self._serializer_many_to_many_field_names
+               and not (
+                    any(
+                        isinstance(self.fields.get(field_name), field_class)
+                        for field_class in self.many_to_many_field_classes
+                    ) and
+                    any(
+                        isinstance(self.fields.get(field_name).child_relation, field_class)
+                        for field_class in self.many_to_many_child_field_classes
+                    )
+            )
+        ]
+
+    @property
+    def many_to_many_field_classes(self):
+        return [serializers.ManyRelatedField]
+
+    @property
+    def many_to_many_child_field_classes(self):
+        return [serializers.PrimaryKeyRelatedField]
 
     def _update_or_create_many_to_many_field(self, field_name, data, model_instance):
         serializer = self._get_serializer_by_field_name(field_name)
