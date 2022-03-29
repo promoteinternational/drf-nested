@@ -51,6 +51,8 @@ class UniqueFieldMixin(serializers.ModelSerializer):
     def _validate_unique(self, validated_data):
         for field in self.unique_validators:
             unique_validator = UniqueValidator(self.Meta.model.objects.all())
+            if field not in validated_data:
+                continue
             call_args = [validated_data[field]]
             if hasattr(unique_validator, "set_context"):
                 unique_validator.set_context(self.fields[field])

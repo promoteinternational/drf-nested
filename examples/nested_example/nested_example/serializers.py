@@ -3,7 +3,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from drf_nested.mixins import (NestableMixin, CreateNestedMixin, UpdateNestedMixin, GenericRelationMixin,
-                               UniqueTogetherMixin)
+                               UniqueTogetherMixin, UniqueFieldMixin)
 from drf_nested.utils.queryset_to_instance import nested_validate
 from .models import User, Group, Manager, Employee, EmployeeRole, Role, Company, Comment
 
@@ -12,7 +12,7 @@ class NestedSerializer(CreateNestedMixin, UpdateNestedMixin):
     pass
 
 
-class UserSerializer(NestableMixin, serializers.HyperlinkedModelSerializer):
+class UserSerializer(UniqueFieldMixin, NestableMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.IntegerField(required=False)
 
     @nested_validate

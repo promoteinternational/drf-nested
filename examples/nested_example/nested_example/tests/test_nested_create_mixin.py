@@ -1,7 +1,7 @@
 from django.test import TestCase
 from rest_framework.exceptions import ValidationError, ErrorDetail
 
-from nested_example.serializers import EmployeeSerializer, CompanySerializer, UserGroupSerializer
+from nested_example.serializers import EmployeeSerializer, CompanySerializer, UserGroupSerializer, GroupSerializer
 
 
 class NestedCreateMixinTest(TestCase):
@@ -42,6 +42,19 @@ class NestedCreateMixinTest(TestCase):
         self.assertIsNotNone(user.instance)
         data = user.data
         self.assertEqual(len(data.get('groups')), 2)
+
+    def test_create_m2m_nested_success(self):
+        group = GroupSerializer(
+            data={"name": "Some name",
+                  "members": [
+                      {"username": "username1"},
+                      {"username": "username2"},
+                  ]})
+        group.is_valid(raise_exception=True)
+        group.save()
+        self.assertIsNotNone(group.instance)
+        data = group.data
+        self.assertEqual(len(data.get('members')), 2)
 
     def test_create_reverse_nested_fail(self):
         user = UserGroupSerializer(
