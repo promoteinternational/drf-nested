@@ -1,10 +1,11 @@
 from typing import Union
 
-from rest_framework import serializers
 from rest_framework.fields import empty
 
+from drf_nested.mixins.base_nestable_mixin import BaseNestableMixin
 
-class GenericRelationMixin(serializers.ModelSerializer):
+
+class GenericRelationMixin(BaseNestableMixin):
     generic_relation_fields = ["content_type", "content_type_id", "object_id"]
 
     def _set_generic_relation_fields(self, value: bool):
