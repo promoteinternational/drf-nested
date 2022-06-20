@@ -3,7 +3,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from drf_nested.mixins import (NestableMixin, CreateNestedMixin, UpdateNestedMixin, GenericRelationMixin,
-                               UniqueTogetherMixin, UniqueFieldMixin)
+                               UniqueTogetherMixin, UniqueFieldMixin, ThroughMixin)
 from drf_nested.utils.queryset_to_instance import nested_validate
 from .models import User, Group, Manager, Employee, EmployeeRole, Role, Company, Comment
 
@@ -70,10 +70,10 @@ class EmployeeSerializer(NestedSerializer, serializers.HyperlinkedModelSerialize
         fields = ('id', 'user', 'status')
 
 
-class EmployeeRoleSerializer(NestableMixin, serializers.HyperlinkedModelSerializer):
+class EmployeeRoleSerializer(ThroughMixin, NestableMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.IntegerField(required=False)
     employee_id = serializers.IntegerField()
-    role_id = serializers.IntegerField()
+    role_id = serializers.IntegerField(required=False)
 
     class Meta:
         model = EmployeeRole
@@ -84,6 +84,17 @@ class RoleSerializer(NestedSerializer, serializers.HyperlinkedModelSerializer):
     id = serializers.IntegerField(required=False)
     employees = EmployeeRoleSerializer(many=True, required=False, write_source="employee_roles",
                                        source="employee_roles")
+
+    class Meta:
+        model = Role
+        fields = ('id', 'employees', 'permission', 'name')
+
+
+class RoleNestedSerializer(NestedSerializer, serializers.HyperlinkedModelSerializer):
+    id = serializers.IntegerField(required=False)
+    employees = EmployeeRoleSerializer(many=True, required=False, write_source="employee_roles",
+                                       source="employee_roles", should_use_related_model_id=True,
+                                       related_name="role_id")
 
     class Meta:
         model = Role
