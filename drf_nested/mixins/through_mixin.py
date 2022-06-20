@@ -13,7 +13,7 @@ class ThroughMixin(serializers.ModelSerializer):
         if 'connect_to_model' in kwargs:
             self.connect_to_model = kwargs.pop('connect_to_model')
         if 'related_name' in kwargs:
-            self.use_related_key = kwargs.pop('related_name')
+            self.related_name = kwargs.pop('related_name')
         if 'should_use_related_model_pk' in kwargs:
             self.should_use_related_model_pk = kwargs.pop('should_use_related_model_pk')
 
