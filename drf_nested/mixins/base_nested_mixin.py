@@ -289,6 +289,11 @@ class BaseNestedMixin(serializers.ModelSerializer):
 
         if issubclass(serializer.__class__, ListSerializer) and isinstance(data, list):
             serializer.child.partial = self.partial
+            related_name = None
+            should_use_related_model_pk = False
+            if issubclass(serializer.child.__class__, ThroughMixin):
+                related_name = serializer.child.related_name
+                should_use_related_model_pk = serializer.child.should_use_related_model_pk
 
             if self._should_be_deleted_on_update(field_name):
                 # Removing connected relations that are not provided in the data
@@ -302,6 +307,8 @@ class BaseNestedMixin(serializers.ModelSerializer):
                 serializer_initial_data = deepcopy(serializer.child.initial_data)
                 for item, initial_item in zip(data, serializer.child.initial_data):
                     serializer.child.initial_data = initial_item
+                    if related_name and not self._should_preserve_provided(serializer):
+                        item[related_name] = model_instance.pk if should_use_related_model_pk else model_instance
                     with NestedListExceptionHandler(field_name, self):
                         pk = item.get(self._get_field_pk_name(field_name))
                         if pk is not None:
@@ -317,6 +324,8 @@ class BaseNestedMixin(serializers.ModelSerializer):
                 for item in data:
                     with NestedListExceptionHandler(field_name, self):
                         pk = item.get(self._get_field_pk_name(field_name))
+                        if related_name and not self._should_preserve_provided(serializer):
+                            item[related_name] = model_instance.pk if should_use_related_model_pk else model_instance
                         if pk is not None:
                             nested_instance = serializer.child.Meta.model.objects.get(pk=pk)
                             nested_instance = serializer.child.update(nested_instance, item)

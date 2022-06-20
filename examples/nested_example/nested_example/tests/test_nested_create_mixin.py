@@ -1,7 +1,10 @@
+from copy import copy
+
 from django.test import TestCase
 from rest_framework.exceptions import ValidationError, ErrorDetail
 
-from nested_example.serializers import EmployeeSerializer, CompanySerializer, UserGroupSerializer, GroupSerializer
+from nested_example.serializers import EmployeeSerializer, CompanySerializer, UserGroupSerializer, GroupSerializer, \
+    RoleNestedSerializer
 
 
 class NestedCreateMixinTest(TestCase):
@@ -165,3 +168,29 @@ class NestedCreateMixinTest(TestCase):
                          {'text': [
                              ErrorDetail(string="Text shouldn't be greater than 20 symbols", code='invalid')]},
                          )
+
+    def test_create_many_to_many_nested_with_through_success(self):
+        employee = EmployeeSerializer(
+            data={"user": {"username": "Some name"},
+                  "status": "Some status"}
+        )
+        employee.is_valid(raise_exception=True)
+        employee.save()
+
+        employee_role = RoleNestedSerializer(
+            data={
+                "permission": "high",
+                "name": "admin",
+                "employees": [{
+                    "employee_id": employee.instance.id,
+                    "name": "Some Name"
+                }]
+            }
+        )
+        employee_role.is_valid(raise_exception=True)
+        employee_role.save()
+
+        self.assertIsNotNone(employee_role.instance)
+
+        data = copy(employee_role.data)
+        self.assertEqual(len(data.get('employees')), 1)
