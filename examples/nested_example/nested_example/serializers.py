@@ -93,7 +93,7 @@ class RoleSerializer(NestedSerializer, serializers.HyperlinkedModelSerializer):
 class RoleNestedSerializer(NestedSerializer, serializers.HyperlinkedModelSerializer):
     id = serializers.IntegerField(required=False)
     employees = EmployeeRoleSerializer(many=True, required=False, write_source="employee_roles",
-                                       source="employee_roles", should_use_related_model_id=True,
+                                       source="employee_roles", should_use_related_model_pk=True,
                                        related_name="role_id")
 
     class Meta:
