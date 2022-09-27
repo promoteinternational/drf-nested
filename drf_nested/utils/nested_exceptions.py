@@ -29,7 +29,10 @@ class NestedInstanceExceptionHandler:
         pass
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_type and issubclass(exc_type, ValidationError):
-            error = exc_val if exc_val else ValidationError()
-            self.serializer_instance._errors.update({self.field_name: as_serializer_error(error)})
+        if exc_type:
+            if issubclass(exc_type, ValidationError):
+                error = exc_val if exc_val else ValidationError()
+                self.serializer_instance._errors.update({self.field_name: as_serializer_error(error)})
+            elif exc_val:
+                raise exc_val
         return True
