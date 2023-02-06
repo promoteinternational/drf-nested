@@ -6,7 +6,7 @@ line-length = 100
 
 [tool.poetry]
 name = "drf-nested"
-version = "1.2.23"
+version = "1.2.24"
 description = ""
 authors = ["Artur Veres <artur8118@gmail.com>", "Andréas Kühne <andreas.kuhne@promoteint.com>"]
 license = "License :: OSI Approved :: MIT License"
