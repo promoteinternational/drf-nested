@@ -14,7 +14,9 @@ class NestedListExceptionHandler:
         if exc_type and issubclass(exc_type, ValidationError):
             error = exc_val if exc_val else ValidationError()
             if self.field_name not in self.serializer_instance._errors:
-                self.serializer_instance._errors.update({self.field_name: [as_serializer_error(error)]})
+                self.serializer_instance._errors.update(
+                    {self.field_name: [as_serializer_error(error)]}
+                )
             else:
                 self.serializer_instance._errors[self.field_name].append(as_serializer_error(error))
         elif exc_val:
@@ -34,7 +36,9 @@ class NestedInstanceExceptionHandler:
         if exc_type:
             if issubclass(exc_type, ValidationError):
                 error = exc_val if exc_val else ValidationError()
-                self.serializer_instance._errors.update({self.field_name: as_serializer_error(error)})
+                self.serializer_instance._errors.update(
+                    {self.field_name: as_serializer_error(error)}
+                )
             elif exc_val:
                 raise exc_val
         return True

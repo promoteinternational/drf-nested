@@ -42,7 +42,8 @@ class UniqueFieldMixin(serializers.ModelSerializer):
             if self._has_unique_validator(field_serializer):
                 self.add_validator(field_name)
             field_serializer.validators = [
-                validator for validator in field_serializer.validators
+                validator
+                for validator in field_serializer.validators
                 if not self._is_unique_validator(validator)
             ]
         return fields

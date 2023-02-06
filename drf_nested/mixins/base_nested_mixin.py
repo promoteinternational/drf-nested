@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Union, List, Optional
+from typing import List, Optional, Union
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -8,9 +8,9 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.fields import empty
 from rest_framework.serializers import ListSerializer
 
-from .nestable_mixin import NestableMixin
-from .through_mixin import ThroughMixin
-from ..utils import NestedListExceptionHandler, NestedInstanceExceptionHandler
+from drf_nested.mixins.nestable_mixin import NestableMixin
+from drf_nested.mixins.through_mixin import ThroughMixin
+from drf_nested.utils import NestedInstanceExceptionHandler, NestedListExceptionHandler
 
 
 class BaseNestedMixin(serializers.ModelSerializer):
@@ -18,11 +18,12 @@ class BaseNestedMixin(serializers.ModelSerializer):
     Base class for nested serializers.
     Provides all the needed methods and properties for manipulating nested data.
     """
+
     populate_nested_initial_data: bool = False
 
     def __init__(self, instance=None, data: Union[empty, dict, list] = empty, **kwargs):
-        if 'populate_nested_initial_data' in kwargs:
-            self.populate_nested_initial_data = kwargs.pop('populate_nested_initial_data')
+        if "populate_nested_initial_data" in kwargs:
+            self.populate_nested_initial_data = kwargs.pop("populate_nested_initial_data")
 
         super().__init__(instance, data, **kwargs)
 
@@ -35,10 +36,12 @@ class BaseNestedMixin(serializers.ModelSerializer):
                 for field_name, nested_data in nested_fields_data.items():
                     serializer = self.fields.get(field_name)
                     if serializer:
-                        serializer_kwargs = (serializer.child._kwargs if "child" in serializer._kwargs
-                                             else serializer._kwargs)
-                        serializer_kwargs.update(context=self.context,
-                                                 data=nested_data)
+                        serializer_kwargs = (
+                            serializer.child._kwargs
+                            if "child" in serializer._kwargs
+                            else serializer._kwargs
+                        )
+                        serializer_kwargs.update(context=self.context, data=nested_data)
 
                         # Initializing the new instances nested serializers
                         if issubclass(serializer.__class__, ListSerializer):
@@ -67,7 +70,11 @@ class BaseNestedMixin(serializers.ModelSerializer):
                     ids.append(item.get(pk_key))
             return ids
         else:
-            if isinstance(nested_data, dict) and pk_key in nested_data and nested_data.get(pk_key) is not None:
+            if (
+                isinstance(nested_data, dict)
+                and pk_key in nested_data
+                and nested_data.get(pk_key) is not None
+            ):
                 return nested_data.get(pk_key)
         return None
 
@@ -94,22 +101,30 @@ class BaseNestedMixin(serializers.ModelSerializer):
         attr = "pop" if remove_fields else "get"
         initial_data_copy = deepcopy(initial_data)
         nested_fields = {
-            field_name: initial_data.__getattribute__(attr)(field_name) for field_name in initial_data_copy
+            field_name: initial_data.__getattribute__(attr)(field_name)
+            for field_name in initial_data_copy
             if self.get_model_field_name(field_name) in self.nested_field_names
         }
         return initial_data, nested_fields
 
     @property
     def nested_field_names(self):
-        return [self.get_model_field_name(name) for name in [*self.direct_relations,
-                                                             *self.reverse_relations,
-                                                             *self.many_to_many_fields,
-                                                             *self.generic_relations]]
+        return [
+            self.get_model_field_name(name)
+            for name in [
+                *self.direct_relations,
+                *self.reverse_relations,
+                *self.many_to_many_fields,
+                *self.generic_relations,
+            ]
+        ]
 
     # Direct relations
     @property
     def _model_direct_relations(self) -> List:
-        return [field for field in self.Meta.model._meta.fields if isinstance(field, models.ForeignKey)]
+        return [
+            field for field in self.Meta.model._meta.fields if isinstance(field, models.ForeignKey)
+        ]
 
     @property
     def _model_direct_relation_names(self) -> List[str]:
@@ -117,14 +132,18 @@ class BaseNestedMixin(serializers.ModelSerializer):
 
     @property
     def _serializer_direct_relation_names(self):
-        return [self.get_model_field_name(field_name) for field_name in self._model_direct_relation_names]
+        return [
+            self.get_model_field_name(field_name)
+            for field_name in self._model_direct_relation_names
+        ]
 
     @property
     def direct_relations(self) -> List[str]:
         return [
-            field_name for field_name in self.fields
+            field_name
+            for field_name in self.fields
             if self.get_model_field_name(field_name) in self._serializer_direct_relation_names
-               and not any(
+            and not any(
                 isinstance(self.fields.get(field_name), field_class)
                 for field_class in self.direct_relation_field_classes
             )
@@ -148,7 +167,11 @@ class BaseNestedMixin(serializers.ModelSerializer):
     # Reverse relations
     @property
     def _model_reverse_relations(self) -> List:
-        return [field for field in self.Meta.model._meta.related_objects if not isinstance(field, models.ManyToManyRel)]
+        return [
+            field
+            for field in self.Meta.model._meta.related_objects
+            if not isinstance(field, models.ManyToManyRel)
+        ]
 
     @property
     def _model_reverse_relation_names(self) -> List[str]:
@@ -156,22 +179,26 @@ class BaseNestedMixin(serializers.ModelSerializer):
 
     @property
     def _serializer_reverse_relation_names(self) -> List[str]:
-        return [self.get_model_field_name(field_name) for field_name in self._model_reverse_relation_names]
+        return [
+            self.get_model_field_name(field_name)
+            for field_name in self._model_reverse_relation_names
+        ]
 
     @property
     def reverse_relations(self) -> List[str]:
         return [
-            field_name for field_name in self.fields
+            field_name
+            for field_name in self.fields
             if self.get_model_field_name(field_name) in self._serializer_reverse_relation_names
-               and not (
-                    any(
-                        isinstance(self.fields.get(field_name), field_class)
-                        for field_class in self.reverse_relation_field_classes
-                    ) and
-                    any(
-                        isinstance(self.fields.get(field_name).child_relation, field_class)
-                        for field_class in self.reverse_relation_child_field_classes
-                    )
+            and not (
+                any(
+                    isinstance(self.fields.get(field_name), field_class)
+                    for field_class in self.reverse_relation_field_classes
+                )
+                and any(
+                    isinstance(self.fields.get(field_name).child_relation, field_class)
+                    for field_class in self.reverse_relation_child_field_classes
+                )
             )
         ]
 
@@ -198,7 +225,9 @@ class BaseNestedMixin(serializers.ModelSerializer):
 
             if self._should_be_deleted_on_update(field_name):
                 # Removing connected relations that are not provided in the data
-                self._delete_difference_on_update(model_instance, data, serializer.child.Meta.model, field_name)
+                self._delete_difference_on_update(
+                    model_instance, data, serializer.child.Meta.model, field_name
+                )
 
             # If there is an instance that can be updated by the provided data - find
             # and use provided data to update existing instance.
@@ -246,8 +275,11 @@ class BaseNestedMixin(serializers.ModelSerializer):
     # Many-to-many fields
     @property
     def _model_many_to_many_fields(self) -> List:
-        reverse_related_m2m = [field for field in self.Meta.model._meta.related_objects
-                               if isinstance(field, models.ManyToManyRel)]
+        reverse_related_m2m = [
+            field
+            for field in self.Meta.model._meta.related_objects
+            if isinstance(field, models.ManyToManyRel)
+        ]
         regular_m2m = self.Meta.model._meta.many_to_many
         return [*regular_m2m, *reverse_related_m2m]
 
@@ -257,22 +289,26 @@ class BaseNestedMixin(serializers.ModelSerializer):
 
     @property
     def _serializer_many_to_many_field_names(self) -> List[str]:
-        return [self.get_model_field_name(field_name) for field_name in self._model_many_to_many_field_names]
+        return [
+            self.get_model_field_name(field_name)
+            for field_name in self._model_many_to_many_field_names
+        ]
 
     @property
     def many_to_many_fields(self) -> List[str]:
         return [
-            field_name for field_name in self.fields
+            field_name
+            for field_name in self.fields
             if self.get_model_field_name(field_name) in self._serializer_many_to_many_field_names
-               and not (
-                    any(
-                        isinstance(self.fields.get(field_name), field_class)
-                        for field_class in self.many_to_many_field_classes
-                    ) and
-                    any(
-                        isinstance(self.fields.get(field_name).child_relation, field_class)
-                        for field_class in self.many_to_many_child_field_classes
-                    )
+            and not (
+                any(
+                    isinstance(self.fields.get(field_name), field_class)
+                    for field_class in self.many_to_many_field_classes
+                )
+                and any(
+                    isinstance(self.fields.get(field_name).child_relation, field_class)
+                    for field_class in self.many_to_many_child_field_classes
+                )
             )
         ]
 
@@ -297,7 +333,9 @@ class BaseNestedMixin(serializers.ModelSerializer):
 
             if self._should_be_deleted_on_update(field_name):
                 # Removing connected relations that are not provided in the data
-                self._delete_difference_on_update(model_instance, data, serializer.child.Meta.model, field_name)
+                self._delete_difference_on_update(
+                    model_instance, data, serializer.child.Meta.model, field_name
+                )
 
             # If there is an instance that can be updated by the provided data - find
             # and use provided data to update existing instance.
@@ -308,7 +346,9 @@ class BaseNestedMixin(serializers.ModelSerializer):
                 for item, initial_item in zip(data, serializer.child.initial_data):
                     serializer.child.initial_data = initial_item
                     if related_name and not self._should_preserve_provided(serializer):
-                        item[related_name] = model_instance.pk if should_use_related_model_pk else model_instance
+                        item[related_name] = (
+                            model_instance.pk if should_use_related_model_pk else model_instance
+                        )
                     with NestedListExceptionHandler(field_name, self):
                         pk = item.get(self._get_field_pk_name(field_name))
                         if pk is not None:
@@ -325,7 +365,9 @@ class BaseNestedMixin(serializers.ModelSerializer):
                     with NestedListExceptionHandler(field_name, self):
                         pk = item.get(self._get_field_pk_name(field_name))
                         if related_name and not self._should_preserve_provided(serializer):
-                            item[related_name] = model_instance.pk if should_use_related_model_pk else model_instance
+                            item[related_name] = (
+                                model_instance.pk if should_use_related_model_pk else model_instance
+                            )
                         if pk is not None:
                             nested_instance = serializer.child.Meta.model.objects.get(pk=pk)
                             nested_instance = serializer.child.update(nested_instance, item)
@@ -334,9 +376,13 @@ class BaseNestedMixin(serializers.ModelSerializer):
                         if nested_instance:
                             items_to_add.append(nested_instance)
 
-            if ((not issubclass(serializer.child.__class__, ThroughMixin) or serializer.child.connect_to_model) and
-                    not self._should_preserve_provided(serializer.child)):
-                model_instance.__getattribute__(self.get_model_field_name(field_name)).add(*items_to_add)
+            if (
+                not issubclass(serializer.child.__class__, ThroughMixin)
+                or serializer.child.connect_to_model
+            ) and not self._should_preserve_provided(serializer.child):
+                model_instance.__getattribute__(self.get_model_field_name(field_name)).add(
+                    *items_to_add
+                )
 
     # Generic relations
     @property
@@ -349,12 +395,18 @@ class BaseNestedMixin(serializers.ModelSerializer):
 
     @property
     def _serializer_generic_relation_names(self) -> List[str]:
-        return [self.get_model_field_name(field_name) for field_name in self._model_generic_relation_names]
+        return [
+            self.get_model_field_name(field_name)
+            for field_name in self._model_generic_relation_names
+        ]
 
     @property
     def generic_relations(self) -> List[str]:
-        return [field_name for field_name in self.fields
-                if self.get_model_field_name(field_name) in self._serializer_generic_relation_names]
+        return [
+            field_name
+            for field_name in self.fields
+            if self.get_model_field_name(field_name) in self._serializer_generic_relation_names
+        ]
 
     def _update_or_create_generic_relation(self, field_name, data, model_instance):
         serializer = self._get_serializer_by_field_name(field_name)
@@ -363,15 +415,21 @@ class BaseNestedMixin(serializers.ModelSerializer):
 
             if self._should_be_deleted_on_update(field_name):
                 # Removing connected relations that are not provided in the data
-                self._delete_difference_on_update(model_instance, data, serializer.child.Meta.model, field_name)
+                self._delete_difference_on_update(
+                    model_instance, data, serializer.child.Meta.model, field_name
+                )
 
             for item in data:
                 with NestedListExceptionHandler(field_name, self):
                     content_type = ContentType.objects.get_for_model(model_instance.__class__)
                     # Setting special for GenericRelation model fields
                     if not self._should_preserve_provided(serializer.child):
-                        item.update({"content_type_id": content_type.id,
-                                     "object_id": model_instance.id})
+                        item.update(
+                            {
+                                "content_type_id": content_type.id,
+                                "object_id": model_instance.id,
+                            }
+                        )
                     pk = item.get(self._get_field_pk_name(field_name))
                     if pk is not None:
                         nested_instance = serializer.child.Meta.model.objects.get(pk=pk)
@@ -416,8 +474,10 @@ class BaseNestedMixin(serializers.ModelSerializer):
         :return: None
         """
         if isinstance(objects, list):
-            objects_to_delete = list(set([item.pk for item in instance.__getattribute__(field_name).all()]) -
-                                     set([item.get(self._get_field_pk_name(field_name)) for item in objects]))
+            objects_to_delete = list(
+                set([item.pk for item in instance.__getattribute__(field_name).all()])
+                - set([item.get(self._get_field_pk_name(field_name)) for item in objects])
+            )
 
             if field_name not in self.many_to_many_fields:
                 for object_id in objects_to_delete:
@@ -431,7 +491,9 @@ class BaseNestedMixin(serializers.ModelSerializer):
                 for object_id in objects_to_delete:
                     if object_id:
                         try:
-                            instance.__getattribute__(field_name).remove(model_class.objects.get(pk=object_id))
+                            instance.__getattribute__(field_name).remove(
+                                model_class.objects.get(pk=object_id)
+                            )
                         except (model_class.DoesNotExist, AttributeError):
                             pass
 
@@ -497,10 +559,12 @@ class BaseNestedMixin(serializers.ModelSerializer):
         :param nested_fields_data: nested data, taken from the original data source
         :return: nested fields, sorted by relationship type
         """
-        types = {"direct_relations": [],
-                 "reverse_relations": [],
-                 "generic_relations": [],
-                 "many_to_many_fields": []}
+        types = {
+            "direct_relations": [],
+            "reverse_relations": [],
+            "generic_relations": [],
+            "many_to_many_fields": [],
+        }
         for field_name, field_value in nested_fields_data.items():
             original_name = field_name
             model_field_name = self.get_model_field_name(field_name)
@@ -513,24 +577,40 @@ class BaseNestedMixin(serializers.ModelSerializer):
                 continue
 
             if model_field_name in self._serializer_direct_relation_names:
-                types["direct_relations"].append({"name": field_name,
-                                                  "data": field_value,
-                                                  "original_name": original_name})
+                types["direct_relations"].append(
+                    {
+                        "name": field_name,
+                        "data": field_value,
+                        "original_name": original_name,
+                    }
+                )
 
             if model_field_name in self._serializer_reverse_relation_names:
-                types["reverse_relations"].append({"name": field_name,
-                                                   "data": field_value,
-                                                   "original_name": original_name})
+                types["reverse_relations"].append(
+                    {
+                        "name": field_name,
+                        "data": field_value,
+                        "original_name": original_name,
+                    }
+                )
 
             if model_field_name in self._serializer_generic_relation_names:
-                types["generic_relations"].append({"name": field_name,
-                                                   "data": field_value,
-                                                   "original_name": original_name})
+                types["generic_relations"].append(
+                    {
+                        "name": field_name,
+                        "data": field_value,
+                        "original_name": original_name,
+                    }
+                )
 
             if model_field_name in self._serializer_many_to_many_field_names:
-                types["many_to_many_fields"].append({"name": field_name,
-                                                     "data": field_value,
-                                                     "original_name": original_name})
+                types["many_to_many_fields"].append(
+                    {
+                        "name": field_name,
+                        "data": field_value,
+                        "original_name": original_name,
+                    }
+                )
 
         return types
 
