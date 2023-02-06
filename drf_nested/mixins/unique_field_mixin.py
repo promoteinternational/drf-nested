@@ -25,7 +25,11 @@ class UniqueFieldMixin(serializers.ModelSerializer):
 
     @property
     def unique_validators(self):
-        return self.Meta.unique_validators if self.Meta.unique_validators is not None else []
+        return (
+            self.Meta.unique_validators
+            if self.Meta.unique_validators is not None
+            else []
+        )
 
     def _is_unique_validator(self, validator):
         return isinstance(validator, UniqueValidator)
@@ -42,7 +46,8 @@ class UniqueFieldMixin(serializers.ModelSerializer):
             if self._has_unique_validator(field_serializer):
                 self.add_validator(field_name)
             field_serializer.validators = [
-                validator for validator in field_serializer.validators
+                validator
+                for validator in field_serializer.validators
                 if not self._is_unique_validator(validator)
             ]
         return fields

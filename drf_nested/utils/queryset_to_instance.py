@@ -42,14 +42,17 @@ class QuerySetInstanceManager:
         self.original_instance = self.serializer_instance.instance
         if self.serializer_instance.instance is not None:
             if isinstance(self.serializer_instance.instance, QuerySet):
-                self.serializer_instance._set_instance_from_queryset(self.validated_data,
-                                                                     self.original_instance)
+                self.serializer_instance._set_instance_from_queryset(
+                    self.validated_data, self.original_instance
+                )
             else:
-                self.serializer_instance._set_instance_from_existing(self.validated_data,
-                                                                     self.original_instance)
+                self.serializer_instance._set_instance_from_existing(
+                    self.validated_data, self.original_instance
+                )
         elif self.serializer_instance.instance is None:
-            self.serializer_instance._set_instance_from_queryset(self.validated_data,
-                                                                 self.serializer_instance.Meta.model.objects.all())
+            self.serializer_instance._set_instance_from_queryset(
+                self.validated_data, self.serializer_instance.Meta.model.objects.all()
+            )
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.serializer_instance.instance = self.original_instance

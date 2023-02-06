@@ -20,8 +20,11 @@ class UniqueTogetherMixin(BaseNestableMixin):
         for validator in self.validators:
             if self._is_unique_together_validator(validator):
                 self.add_validator(validator.fields)
-        self.validators = [validator for validator in self.validators
-                           if not self._is_unique_together_validator(validator)]
+        self.validators = [
+            validator
+            for validator in self.validators
+            if not self._is_unique_together_validator(validator)
+        ]
         super().__init__(instance, data, **kwargs)
 
     def add_validator(self, fields):
@@ -31,7 +34,11 @@ class UniqueTogetherMixin(BaseNestableMixin):
 
     @property
     def unique_together_validators(self):
-        return self.Meta.unique_together_validators if self.Meta.unique_together_validators is not None else []
+        return (
+            self.Meta.unique_together_validators
+            if self.Meta.unique_together_validators is not None
+            else []
+        )
 
     def _is_unique_together_validator(self, validator):
         return isinstance(validator, UniqueTogetherValidator)
@@ -39,8 +46,9 @@ class UniqueTogetherMixin(BaseNestableMixin):
     @nested_unique_validate
     def _validate_unique_together_instance(self, validated_data):
         for fields in self.unique_together_validators:
-            unique_together_validator = UniqueTogetherValidator(self.Meta.model.objects.all(),
-                                                                fields)
+            unique_together_validator = UniqueTogetherValidator(
+                self.Meta.model.objects.all(), fields
+            )
             call_args = [validated_data]
             if hasattr(unique_together_validator, "set_context"):
                 unique_together_validator.set_context(self)
@@ -63,7 +71,9 @@ class UniqueTogetherMixin(BaseNestableMixin):
             self.instance = queryset
         else:
             if self.instance is None:
-                self._set_instance_from_queryset(validated_data, self.Meta.model.objects.all())
+                self._set_instance_from_queryset(
+                    validated_data, self.Meta.model.objects.all()
+                )
             self._validate_unique_together_instance(validated_data)
 
     def create(self, validated_data):
