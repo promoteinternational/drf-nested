@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "drf-nested"
+version = "1.2.23"
+description = ""
+authors = ["Artur Veres <artur8118@gmail.com>", "Andréas Kühne <andreas.kuhne@promoteint.com>"]
+license = "License :: OSI Approved :: MIT License"
+readme = "README.md"
+packages = [{ include = "drf_nested" }]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+django = ">=2.0"
+djangorestframework = ">=3.8.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
