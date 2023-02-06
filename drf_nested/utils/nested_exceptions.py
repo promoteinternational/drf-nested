@@ -18,9 +18,7 @@ class NestedListExceptionHandler:
                     {self.field_name: [as_serializer_error(error)]}
                 )
             else:
-                self.serializer_instance._errors[self.field_name].append(
-                    as_serializer_error(error)
-                )
+                self.serializer_instance._errors[self.field_name].append(as_serializer_error(error))
         elif exc_val:
             raise exc_val
         return True

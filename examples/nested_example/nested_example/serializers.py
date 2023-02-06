@@ -20,18 +20,14 @@ class NestedSerializer(CreateNestedMixin, UpdateNestedMixin):
     pass
 
 
-class UserSerializer(
-    UniqueFieldMixin, NestableMixin, serializers.HyperlinkedModelSerializer
-):
+class UserSerializer(UniqueFieldMixin, NestableMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.IntegerField(required=False)
 
     @nested_validate
     def validate(self, attrs):
         username = attrs.get("username")
         if username and len(username) > 20:
-            raise ValidationError(
-                {"username": ["Username shouldn't be greater than 20 symbols"]}
-            )
+            raise ValidationError({"username": ["Username shouldn't be greater than 20 symbols"]})
         return super().validate(attrs)
 
     def create(self, validated_data):
@@ -46,15 +42,11 @@ class UserSerializer(
 
 class CommentSerializer(GenericRelationMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.IntegerField(required=False)
-    content_type = serializers.PrimaryKeyRelatedField(
-        queryset=ContentType.objects.all()
-    )
+    content_type = serializers.PrimaryKeyRelatedField(queryset=ContentType.objects.all())
 
     def create(self, validated_data):
         if len(validated_data.get("text")) > 20:
-            raise ValidationError(
-                {"text": ["Text shouldn't be greater than 20 symbols"]}
-            )
+            raise ValidationError({"text": ["Text shouldn't be greater than 20 symbols"]})
         return super().create(validated_data)
 
     class Meta:
@@ -96,9 +88,7 @@ class EmployeeSerializer(NestedSerializer, serializers.HyperlinkedModelSerialize
         fields = ("id", "user", "status")
 
 
-class EmployeeRoleSerializer(
-    ThroughMixin, NestableMixin, serializers.HyperlinkedModelSerializer
-):
+class EmployeeRoleSerializer(ThroughMixin, NestableMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.IntegerField(required=False)
     employee_id = serializers.IntegerField()
     role_id = serializers.IntegerField(required=False)
@@ -138,9 +128,7 @@ class RoleNestedSerializer(NestedSerializer, serializers.HyperlinkedModelSeriali
         fields = ("id", "employees", "permission", "name")
 
 
-class CompanySerializer(
-    NestableMixin, NestedSerializer, serializers.HyperlinkedModelSerializer
-):
+class CompanySerializer(NestableMixin, NestedSerializer, serializers.HyperlinkedModelSerializer):
     id = serializers.IntegerField(required=False)
     managers = ManagerSerializer(many=True, required=False)
     comments = CommentSerializer(many=True, required=False)
@@ -169,9 +157,7 @@ class SimpleGroupSerializer(NestableMixin, serializers.HyperlinkedModelSerialize
     def validate(self, attrs):
         name = attrs.get("name")
         if name and len(name) > 10:
-            raise ValidationError(
-                {"name": ["Name shouldn't be greater than 10 symbols"]}
-            )
+            raise ValidationError({"name": ["Name shouldn't be greater than 10 symbols"]})
         return super().validate(attrs)
 
     class Meta:
@@ -182,9 +168,7 @@ class SimpleGroupSerializer(NestableMixin, serializers.HyperlinkedModelSerialize
         )
 
 
-class GroupErrorRaisingSerializer(
-    NestableMixin, serializers.HyperlinkedModelSerializer
-):
+class GroupErrorRaisingSerializer(NestableMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.IntegerField(required=False)
 
     def create(self, validated_data):
@@ -210,9 +194,7 @@ class UserGroupSerializer(NestedSerializer, serializers.HyperlinkedModelSerializ
         fields = ("id", "username", "is_active", "groups")
 
 
-class UserGroupErrorRaisingSerializer(
-    NestedSerializer, serializers.HyperlinkedModelSerializer
-):
+class UserGroupErrorRaisingSerializer(NestedSerializer, serializers.HyperlinkedModelSerializer):
     id = serializers.IntegerField(required=False)
     groups = GroupErrorRaisingSerializer(many=True, required=False, allow_null=True)
 

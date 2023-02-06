@@ -181,9 +181,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="group",
             name="members",
-            field=models.ManyToManyField(
-                related_name="groups", to="nested_example.User"
-            ),
+            field=models.ManyToManyField(related_name="groups", to="nested_example.User"),
         ),
         migrations.AddField(
             model_name="employeerole",
@@ -206,9 +204,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="company",
             name="managers",
-            field=models.ManyToManyField(
-                related_name="companies", to="nested_example.Manager"
-            ),
+            field=models.ManyToManyField(related_name="companies", to="nested_example.Manager"),
         ),
         migrations.AlterUniqueTogether(
             name="manager",

@@ -37,11 +37,7 @@ class NestedCreateMixinTest(TestCase):
         self.assertIn("user", error.detail)
         self.assertEqual(
             error.detail["user"],
-            {
-                "is_active": [
-                    ErrorDetail(string="User should be active", code="invalid")
-                ]
-            },
+            {"is_active": [ErrorDetail(string="User should be active", code="invalid")]},
         )
 
     def test_create_reverse_nested_success(self):
@@ -160,9 +156,7 @@ class NestedCreateMixinTest(TestCase):
         company = CompanySerializer(
             data={
                 "name": "Company name",
-                "managers": [
-                    {"user": {"username": "Some name"}, "level": "super high"}
-                ],
+                "managers": [{"user": {"username": "Some name"}, "level": "super high"}],
             }
         )
         company.is_valid(raise_exception=True)
@@ -255,9 +249,7 @@ class NestedCreateMixinTest(TestCase):
             data={
                 "permission": "high",
                 "name": "admin",
-                "employees": [
-                    {"employee_id": employee.instance.id, "name": "Some Name"}
-                ],
+                "employees": [{"employee_id": employee.instance.id, "name": "Some Name"}],
             }
         )
         employee_role.is_valid(raise_exception=True)

@@ -71,9 +71,7 @@ class UniqueTogetherMixin(BaseNestableMixin):
             self.instance = queryset
         else:
             if self.instance is None:
-                self._set_instance_from_queryset(
-                    validated_data, self.Meta.model.objects.all()
-                )
+                self._set_instance_from_queryset(validated_data, self.Meta.model.objects.all())
             self._validate_unique_together_instance(validated_data)
 
     def create(self, validated_data):

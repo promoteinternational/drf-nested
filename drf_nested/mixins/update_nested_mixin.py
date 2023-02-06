@@ -39,25 +39,19 @@ class UpdateNestedMixin(BaseNestedMixin):
             for field in nested_field_types["reverse_relations"]:
                 field_name = field.get("name")
                 field_data = field.get("data")
-                self._update_or_create_reverse_relation(
-                    field_name, field_data, model_instance
-                )
+                self._update_or_create_reverse_relation(field_name, field_data, model_instance)
 
             # Updating or creating generic relations using created initial instance
             for field in nested_field_types["generic_relations"]:
                 field_name = field.get("name")
                 field_data = field.get("data")
-                self._update_or_create_generic_relation(
-                    field_name, field_data, model_instance
-                )
+                self._update_or_create_generic_relation(field_name, field_data, model_instance)
 
             # Updating or creating many-to-many relations using created initial instance
             for field in nested_field_types["many_to_many_fields"]:
                 field_name = field.get("name")
                 field_data = field.get("data")
-                self._update_or_create_many_to_many_field(
-                    field_name, field_data, model_instance
-                )
+                self._update_or_create_many_to_many_field(field_name, field_data, model_instance)
 
             if self._errors:
                 raise ValidationError(self._errors)

@@ -22,12 +22,7 @@ class CreateNestedMixin(BaseNestedMixin):
         """
         self._errors = {}
         if self._has_nested_fields(validated_data):
-            if any(
-                [
-                    self._is_field_forbidden(request_field)
-                    for request_field in validated_data
-                ]
-            ):
+            if any([self._is_field_forbidden(request_field) for request_field in validated_data]):
                 raise ValidationError(
                     {"nested_field": [_("Nested fields are not allowed on create.")]}
                 )
@@ -55,25 +50,19 @@ class CreateNestedMixin(BaseNestedMixin):
             for field in nested_field_types["reverse_relations"]:
                 field_name = field.get("name")
                 field_data = field.get("data")
-                self._update_or_create_reverse_relation(
-                    field_name, field_data, model_instance
-                )
+                self._update_or_create_reverse_relation(field_name, field_data, model_instance)
 
             # Creating generic relations using created initial instance
             for field in nested_field_types["generic_relations"]:
                 field_name = field.get("name")
                 field_data = field.get("data")
-                self._update_or_create_generic_relation(
-                    field_name, field_data, model_instance
-                )
+                self._update_or_create_generic_relation(field_name, field_data, model_instance)
 
             # Creating many-to-many relations using created initial instance
             for field in nested_field_types["many_to_many_fields"]:
                 field_name = field.get("name")
                 field_data = field.get("data")
-                self._update_or_create_many_to_many_field(
-                    field_name, field_data, model_instance
-                )
+                self._update_or_create_many_to_many_field(field_name, field_data, model_instance)
 
             if self._errors:
                 raise ValidationError(self._errors)
@@ -88,9 +77,7 @@ class CreateNestedMixin(BaseNestedMixin):
         if hasattr(self.Meta, "forbidden_on_create") and isinstance(
             self.Meta.forbidden_on_create, list
         ):
-            return (
-                self.get_model_field_name(field_name) in self.Meta.forbidden_on_create
-            )
+            return self.get_model_field_name(field_name) in self.Meta.forbidden_on_create
         return False
 
     class Meta:

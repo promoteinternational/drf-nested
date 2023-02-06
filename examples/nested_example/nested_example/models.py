@@ -76,7 +76,5 @@ class EmployeeRole(models.Model):
 
 class Company(models.Model):
     name = models.CharField(max_length=200)
-    managers = models.ManyToManyField(
-        "nested_example.Manager", related_name="companies"
-    )
+    managers = models.ManyToManyField("nested_example.Manager", related_name="companies")
     comments = GenericRelation(Comment, related_name="companies")
