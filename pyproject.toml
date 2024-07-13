@@ -4,6 +4,20 @@ profile = "black"
 [tool.black]
 line-length = 100
 
+[tool.pytest.ini_options]
+python_files = [
+    "tests.py",
+    "test_*.py",
+    "tests_*.py",
+    "*_tests.py",
+]
+norecursedirs = [
+    ".git", "v/", "venv/", "media/", "staticfiles/", "static/", ".idea",
+]
+addopts = "--disable-pytest-warnings -v --reuse-db"
+#addopts = "--disable-pytest-warnings -v --reuse-db --create-db"
+DJANGO_SETTINGS_MODULE="nested_example.settings"
+
 [tool.poetry]
 name = "drf-nested"
 version = "1.2.24"
