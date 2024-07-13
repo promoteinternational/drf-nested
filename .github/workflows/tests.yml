@@ -1,0 +1,61 @@
+name: Test DRF Nested package
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ "3.10", "3.11", "3.12"]
+
+    steps:
+
+      - uses: actions/checkout@v3
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          pip install poetry
+          poetry install --with dev
+
+      - name: Linters
+        run: |
+          poetry run isort -c .
+          poetry run black --check --diff --color .
+          poetry run flake8 .
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ "3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Prerequistites
+        run: sudo apt install python3-dev libpq-dev
+
+      - name: Install dependencies
+        run: |
+          pip install poetry
+          poetry install --with dev
+
+      - name: Run tests
+        run: |
+          cd examples/nested_example/
+          poetry run pytest
