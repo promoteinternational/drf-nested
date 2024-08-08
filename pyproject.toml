@@ -20,7 +20,7 @@ DJANGO_SETTINGS_MODULE="nested_example.settings"
 
 [tool.poetry]
 name = "drf-nested"
-version = "1.3.0"
+version = "1.3.1"
 description = ""
 authors = ["Artur Veres <artur8118@gmail.com>", "Andréas Kühne <andreas.kuhne@promoteint.com>"]
 license = "License :: OSI Approved :: MIT License"
