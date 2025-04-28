@@ -19,7 +19,7 @@ class UniqueTogetherMixin(BaseNestableMixin):
         self.Meta.unique_together_validators = []
         for validator in self.validators:
             if self._is_unique_together_validator(validator):
-                self.add_validator(validator.fields)
+                self.add_validator(validator)
         self.validators = [
             validator
             for validator in self.validators
@@ -27,10 +27,10 @@ class UniqueTogetherMixin(BaseNestableMixin):
         ]
         super().__init__(instance, data, **kwargs)
 
-    def add_validator(self, fields):
+    def add_validator(self, validator):
         if self.Meta.unique_together_validators is None:
             self.Meta.unique_together_validators = []
-        self.Meta.unique_together_validators.append(fields)
+        self.Meta.unique_together_validators.append(validator)
 
     @property
     def unique_together_validators(self):
@@ -45,10 +45,8 @@ class UniqueTogetherMixin(BaseNestableMixin):
 
     @nested_unique_validate
     def _validate_unique_together_instance(self, validated_data):
-        for fields in self.unique_together_validators:
-            unique_together_validator = UniqueTogetherValidator(
-                self.Meta.model.objects.all(), fields
-            )
+        for validator in self.unique_together_validators:
+            unique_together_validator = validator
             call_args = [validated_data]
             if hasattr(unique_together_validator, "set_context"):
                 unique_together_validator.set_context(self)
