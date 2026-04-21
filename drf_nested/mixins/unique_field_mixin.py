@@ -52,9 +52,7 @@ class UniqueFieldMixin(serializers.ModelSerializer):
     @nested_unique_validate
     def _validate_unique(self, validated_data):
         for field in self.unique_validators:
-            unique_validator = UniqueValidator(
-                self.Meta.model.objects.all()
-            )  # ty: ignore[unresolved-attribute]
+            unique_validator = UniqueValidator(self.Meta.model.objects.all())  # ty: ignore[unresolved-attribute]
             if field not in validated_data:
                 continue
             call_args = [validated_data[field]]
