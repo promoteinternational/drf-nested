@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import List, Optional, Union
+from typing import List, Optional
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -21,7 +21,7 @@ class BaseNestedMixin(serializers.ModelSerializer):
 
     populate_nested_initial_data: bool = False
 
-    def __init__(self, instance=None, data: Union[empty, dict, list] = empty, **kwargs):
+    def __init__(self, instance=None, data=empty, **kwargs):
         if "populate_nested_initial_data" in kwargs:
             self.populate_nested_initial_data = kwargs.pop("populate_nested_initial_data")
 
@@ -123,7 +123,9 @@ class BaseNestedMixin(serializers.ModelSerializer):
     @property
     def _model_direct_relations(self) -> List:
         return [
-            field for field in self.Meta.model._meta.fields if isinstance(field, models.ForeignKey)
+            field
+            for field in self.Meta.model._meta.fields  # ty: ignore[unresolved-attribute]
+            if isinstance(field, models.ForeignKey)
         ]
 
     @property
@@ -169,7 +171,7 @@ class BaseNestedMixin(serializers.ModelSerializer):
     def _model_reverse_relations(self) -> List:
         return [
             field
-            for field in self.Meta.model._meta.related_objects
+            for field in self.Meta.model._meta.related_objects  # ty: ignore[unresolved-attribute]
             if not isinstance(field, models.ManyToManyRel)
         ]
 
@@ -216,7 +218,9 @@ class BaseNestedMixin(serializers.ModelSerializer):
             serializer = self.fields.get(self.get_field_name_by_source(field_name))
         return serializer
 
-    def _update_or_create_reverse_relation(self, field_name, data, model_instance):
+    def _update_or_create_reverse_relation(
+        self, field_name, data: "list[dict] | dict", model_instance
+    ):
         serializer = self._get_serializer_by_field_name(field_name)
         related_name = self.get_related_name(self.get_model_field_name(field_name))
 
@@ -262,6 +266,7 @@ class BaseNestedMixin(serializers.ModelSerializer):
                         else:
                             serializer.child.create(item)
         else:
+            assert isinstance(data, dict)
             with NestedInstanceExceptionHandler(field_name, self):
                 pk = data.get(self._get_field_pk_name(field_name))
                 if not self._should_preserve_provided(serializer):
@@ -277,10 +282,10 @@ class BaseNestedMixin(serializers.ModelSerializer):
     def _model_many_to_many_fields(self) -> List:
         reverse_related_m2m = [
             field
-            for field in self.Meta.model._meta.related_objects
+            for field in self.Meta.model._meta.related_objects  # ty: ignore[unresolved-attribute]
             if isinstance(field, models.ManyToManyRel)
         ]
-        regular_m2m = self.Meta.model._meta.many_to_many
+        regular_m2m = self.Meta.model._meta.many_to_many  # ty: ignore[unresolved-attribute]
         return [*regular_m2m, *reverse_related_m2m]
 
     @property
@@ -320,7 +325,9 @@ class BaseNestedMixin(serializers.ModelSerializer):
     def many_to_many_child_field_classes(self):
         return [serializers.PrimaryKeyRelatedField]
 
-    def _update_or_create_many_to_many_field(self, field_name, data, model_instance):
+    def _update_or_create_many_to_many_field(
+        self, field_name, data: "list[dict] | dict", model_instance
+    ):
         serializer = self._get_serializer_by_field_name(field_name)
 
         if issubclass(serializer.__class__, ListSerializer) and isinstance(data, list):
@@ -387,7 +394,7 @@ class BaseNestedMixin(serializers.ModelSerializer):
     # Generic relations
     @property
     def _model_generic_relations(self) -> List:
-        return self.Meta.model._meta.private_fields
+        return self.Meta.model._meta.private_fields  # ty: ignore[unresolved-attribute]
 
     @property
     def _model_generic_relation_names(self) -> List[str]:
@@ -615,4 +622,4 @@ class BaseNestedMixin(serializers.ModelSerializer):
         return types
 
     class Meta:
-        model = None
+        model: type[models.Model]

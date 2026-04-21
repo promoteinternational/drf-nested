@@ -1,13 +1,14 @@
 from copy import copy
 
 from django.test import TestCase
+from rest_framework.exceptions import ValidationError
+
 from nested_example.serializers import (
     CompanySerializer,
     EmployeeSerializer,
     RoleSerializer,
     UserGroupSerializer,
 )
-from rest_framework.exceptions import ValidationError
 
 
 class NestedUpdateMixinTest(TestCase):

@@ -1,5 +1,6 @@
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
+from django.db import models
 from django.db.models import QuerySet
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import empty
@@ -69,7 +70,10 @@ class UniqueTogetherMixin(BaseNestableMixin):
             self.instance = queryset
         else:
             if self.instance is None:
-                self._set_instance_from_queryset(validated_data, self.Meta.model.objects.all())
+                self._set_instance_from_queryset(
+                    validated_data,
+                    self.Meta.model.objects.all(),  # ty: ignore[unresolved-attribute]
+                )
             self._validate_unique_together_instance(validated_data)
 
     def create(self, validated_data):
@@ -81,5 +85,5 @@ class UniqueTogetherMixin(BaseNestableMixin):
         return super().update(instance, validated_data)
 
     class Meta:
-        model = None
-        unique_together_validators: List[Tuple[str]] = None
+        model: type[models.Model]
+        unique_together_validators: Optional[List[Tuple[str]]] = None

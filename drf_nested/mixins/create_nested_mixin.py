@@ -1,5 +1,3 @@
-from typing import Union
-
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import ValidationError
@@ -9,7 +7,7 @@ from drf_nested.mixins.base_nested_mixin import BaseNestedMixin
 
 
 class CreateNestedMixin(BaseNestedMixin):
-    def __init__(self, instance=None, data: Union[empty, dict] = empty, **kwargs):
+    def __init__(self, instance=None, data=empty, **kwargs):
         super().__init__(instance, data, **kwargs)
         if not hasattr(self.Meta, "forbidden_on_create"):
             setattr(self.Meta, "forbidden_on_create", [])
@@ -80,6 +78,5 @@ class CreateNestedMixin(BaseNestedMixin):
             return self.get_model_field_name(field_name) in self.Meta.forbidden_on_create
         return False
 
-    class Meta:
-        model = None
-        forbidden_on_create = None
+    class Meta(BaseNestedMixin.Meta):
+        forbidden_on_create: list

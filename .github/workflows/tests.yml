@@ -11,27 +11,27 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ "3.10", "3.11", "3.12", "3.13"]
+        python-version: [ "3.10", "3.11", "3.12", "3.13", "3.14"]
 
     steps:
+      - uses: actions/checkout@v4
 
-      - uses: actions/checkout@v3
-
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: |
-          pip install poetry
-          poetry install --with dev
+        run: uv sync --all-groups
 
-      - name: Linters
-        run: |
-          poetry run isort -c .
-          poetry run black --check --diff --color .
-          poetry run flake8 .
+      - name: Ruff lint
+        run: uv run ruff check .
+
+      - name: Ruff format
+        run: uv run ruff format --check --diff .
+
+      - name: Type check
+        run: uv run ty check drf_nested
 
   test:
     runs-on: ubuntu-latest
@@ -40,22 +40,20 @@ jobs:
         python-version: [ "3.10", "3.11", "3.12", "3.13"]
 
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
+      - uses: actions/checkout@v4
 
       - name: Prerequistites
         run: sudo apt install python3-dev libpq-dev
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
       - name: Install dependencies
-        run: |
-          pip install poetry
-          poetry install --with dev
+        run: uv sync --all-groups
 
       - name: Run tests
         run: |
           cd examples/nested_example/
-          poetry run pytest
+          uv run pytest

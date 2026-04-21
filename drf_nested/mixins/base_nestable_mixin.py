@@ -1,13 +1,14 @@
+from django.db import models
 from rest_framework import serializers
 
 
 class BaseNestableMixin(serializers.ModelSerializer):
     def _get_model_pk(self):
         if isinstance(self, serializers.ListSerializer):
-            model = self.child.Meta.model
+            model = self.child.Meta.model  # ty: ignore[unresolved-attribute]
         else:
             model = self.Meta.model
-        return model._meta.pk.attname
+        return model._meta.pk.attname  # ty: ignore[unresolved-attribute]
 
     def _set_instance_from_queryset(self, validated_data, queryset):
         pk = self._get_model_pk()
@@ -38,4 +39,4 @@ class BaseNestableMixin(serializers.ModelSerializer):
         pass
 
     class Meta:
-        model = None
+        model: type[models.Model]

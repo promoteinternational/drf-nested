@@ -1,5 +1,3 @@
-from typing import Union
-
 from rest_framework.fields import empty
 
 from drf_nested.mixins.base_nestable_mixin import BaseNestableMixin
@@ -25,7 +23,7 @@ class GenericRelationMixin(BaseNestableMixin):
         self._set_generic_relation_fields(False)
         return result
 
-    def __init__(self, instance=None, data: Union[empty, dict] = empty, **kwargs):
+    def __init__(self, instance=None, data=empty, **kwargs):
         super().__init__(instance, data, **kwargs)
         self._set_generic_relation_fields(False)
 

@@ -1,6 +1,8 @@
 from copy import copy
 
 from django.test import TestCase
+from rest_framework.exceptions import ErrorDetail, ValidationError
+
 from nested_example.serializers import (
     CompanySerializer,
     EmployeeSerializer,
@@ -9,7 +11,6 @@ from nested_example.serializers import (
     UserGroupErrorRaisingSerializer,
     UserGroupSerializer,
 )
-from rest_framework.exceptions import ErrorDetail, ValidationError
 
 
 class NestedCreateMixinTest(TestCase):

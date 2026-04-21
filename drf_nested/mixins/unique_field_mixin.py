@@ -1,5 +1,6 @@
-from typing import List
+from typing import List, Optional
 
+from django.db import models
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import empty
@@ -51,12 +52,14 @@ class UniqueFieldMixin(serializers.ModelSerializer):
     @nested_unique_validate
     def _validate_unique(self, validated_data):
         for field in self.unique_validators:
-            unique_validator = UniqueValidator(self.Meta.model.objects.all())
+            unique_validator = UniqueValidator(
+                self.Meta.model.objects.all()
+            )  # ty: ignore[unresolved-attribute]
             if field not in validated_data:
                 continue
             call_args = [validated_data[field]]
             if hasattr(unique_validator, "set_context"):
-                unique_validator.set_context(self.fields[field])
+                unique_validator.set_context(self.fields[field])  # ty: ignore[call-non-callable]
             else:
                 call_args.append(self.fields[field])
 
@@ -74,5 +77,5 @@ class UniqueFieldMixin(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
     class Meta:
-        model = None
-        unique_validators: List[str] = None
+        model: type[models.Model]
+        unique_validators: Optional[List[str]] = None
